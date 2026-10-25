@@ -161,6 +161,9 @@ private struct AboutOverlay: View {
             dismiss()
             return .handled
         }
+        // A containing element: a label set on the overlay itself would replace
+        // the names of the links and the Continue button inside it.
+        .accessibilityElement(children: .contain)
         .accessibilityLabel("About biblioteca")
         .accessibilityAddTraits(.isModal)
     }

@@ -12,8 +12,8 @@ press Convert.
 
 ## What it does
 
-- **Converts in batches.** Drop files on the window or the Dock icon, use
-  *Open With* in Finder, or press ⌘O. Each book shows its route
+- **Converts in batches.** Drop files on the window or the Dock icon, click
+  the empty window to choose them, use *Open With* in Finder, or press ⌘O. Each book shows its route
   (e.g. `DjVu → EPUB · DjVuLibre → Calibre`), its progress and its result.
 - **Never touches the originals.** Results go beside each original or into a
   folder you choose. An existing file is never overwritten: the new one becomes
