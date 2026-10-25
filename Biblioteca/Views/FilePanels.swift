@@ -18,6 +18,20 @@ enum FilePanels {
         }
     }
 
+    static func chooseImage(_ completion: @escaping (URL) -> Void) {
+        let panel = NSOpenPanel()
+        panel.title = "Choose a Cover"
+        panel.prompt = "Choose"
+        panel.allowedContentTypes = [.image]
+        if panel.runModal() == .OK, let url = panel.url {
+            completion(url)
+        }
+    }
+
+    static func isImage(_ url: URL) -> Bool {
+        UTType(filenameExtension: url.pathExtension)?.conforms(to: .image) ?? false
+    }
+
     static func chooseFolder(_ completion: @escaping (URL) -> Void) {
         let panel = NSOpenPanel()
         panel.title = "Save Converted Books In"

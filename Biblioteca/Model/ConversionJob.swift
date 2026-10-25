@@ -17,6 +17,8 @@ struct ConversionJob: Identifiable, Sendable, Equatable {
     let format: BookFormat?
     /// The folder, relative to the output folder, that a batch writes this book into.
     let relativeFolder: String
+    /// Title, author and cover to write into the converted book.
+    let metadata: BookMetadata
     let status: Status
 
     init(source: URL, relativeFolder: String = "") {
@@ -24,19 +26,28 @@ struct ConversionJob: Identifiable, Sendable, Equatable {
         self.source = source
         format = BookFormat(url: source)
         self.relativeFolder = relativeFolder
+        metadata = .empty
         status = .waiting
     }
 
-    private init(id: UUID, source: URL, format: BookFormat?, relativeFolder: String, status: Status) {
+    private init(id: UUID, source: URL, format: BookFormat?, relativeFolder: String,
+                 metadata: BookMetadata, status: Status) {
         self.id = id
         self.source = source
         self.format = format
         self.relativeFolder = relativeFolder
+        self.metadata = metadata
         self.status = status
     }
 
     func with(status: Status) -> ConversionJob {
-        ConversionJob(id: id, source: source, format: format, relativeFolder: relativeFolder, status: status)
+        ConversionJob(id: id, source: source, format: format, relativeFolder: relativeFolder,
+                      metadata: metadata, status: status)
+    }
+
+    func with(metadata: BookMetadata) -> ConversionJob {
+        ConversionJob(id: id, source: source, format: format, relativeFolder: relativeFolder,
+                      metadata: metadata, status: status)
     }
 
     var name: String { source.lastPathComponent }

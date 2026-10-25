@@ -19,7 +19,8 @@ final class AppSettings {
     }
 
     var converter: Converter {
-        Converter(engines: Converter.availableEngines(tools: tools, settings: conversion))
+        Converter(engines: Converter.availableEngines(tools: tools, settings: conversion),
+                  metadataWriter: Converter.metadataWriter(tools: tools))
     }
 
     func refreshTools() {

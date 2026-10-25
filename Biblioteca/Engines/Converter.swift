@@ -15,9 +15,16 @@ struct ConversionSettings: Sendable, Equatable {
 /// scratch folder, and moves only a finished result next to the user's files.
 struct Converter: Sendable {
     let planner: ConversionPlanner
+    let metadataWriter: MetadataWriter
 
-    init(engines: [any ConversionEngine]) {
+    init(engines: [any ConversionEngine], metadataWriter: MetadataWriter = MetadataWriter()) {
         planner = ConversionPlanner(engines: engines)
+        self.metadataWriter = metadataWriter
+    }
+
+    /// The metadata writer, built from the tools found on this Mac.
+    static func metadataWriter(tools: ToolLocator) -> MetadataWriter {
+        MetadataWriter(ebookMeta: tools.url(for: "ebook-meta"), djvused: tools.url(for: "djvused"))
     }
 
     /// Engines in order of preference, built from the tools found on this Mac.
@@ -38,7 +45,7 @@ struct Converter: Sendable {
         planner.plan(from: source, to: target)
     }
 
-    func convert(_ input: URL, to target: BookFormat, in directory: URL,
+    func convert(_ input: URL, to target: BookFormat, in directory: URL, metadata: BookMetadata = .empty,
                  progress: @escaping ProgressHandler) async throws -> URL {
         guard let source = BookFormat(url: input) else {
             throw ConversionError.unreadableDocument(input.lastPathComponent)
@@ -60,6 +67,16 @@ struct Converter: Sendable {
                 progress(fraction.map { (Double(index) + $0) * share })
             }
             current = next
+        }
+
+        if !metadata.isEmpty {
+            // Never write into the user's original, even on a route with no steps.
+            if current == input {
+                let copy = workspace.url.appendingPathComponent("\(baseName).\(target.fileExtension)")
+                try FileManager.default.copyItem(at: input, to: copy)
+                current = copy
+            }
+            try await metadataWriter.apply(metadata, to: current, format: target)
         }
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Title, author and cover can be set for each book before converting (the
+  tag button on a row, or its context menu). PDF is written natively, the
+  cover becoming the first page; EPUB, MOBI, AZW3 and FB2 need Calibre's
+  `ebook-meta`, DjVu titles need DjVuLibre. A row warns when the target
+  format cannot hold a field.
 - The splash screen's banner is a photograph of a real bookshelf
   (`documents/bookshelf.jpg`), with a deeper scrim so the type stays legible.
 - Folders can be dropped or chosen; every book inside them and their
