@@ -7,6 +7,8 @@ struct ConversionBar: View {
     var body: some View {
         @Bindable var queue = queue
         HStack(spacing: 16) {
+            TsevisMark()
+
             Picker("Convert to", selection: $queue.targetFormat) {
                 ForEach(BookFormat.outputFormats) { format in
                     Text(format.displayName).tag(format)

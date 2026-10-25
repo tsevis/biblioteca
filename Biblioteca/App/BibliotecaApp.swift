@@ -5,15 +5,23 @@ import SwiftUI
 struct BibliotecaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var queue = ConversionQueue()
+    /// The splash screen, shown at every launch and again from About biblioteca.
+    @State private var isAboutPresented = true
 
     var body: some Scene {
         Window("biblioteca", id: "main") {
-            ContentView()
-                .environment(queue)
-                .frame(minWidth: 560, minHeight: 380)
-                .onAppear { appDelegate.queue = queue }
+            AboutPresentation(isPresented: isAboutPresented, dismiss: { isAboutPresented = false }) {
+                ContentView()
+            }
+            .environment(queue)
+            .frame(minWidth: 720, minHeight: 540)
+            .onAppear { appDelegate.queue = queue }
         }
         .commands {
+            // Replaces the standard About panel with the splash screen.
+            CommandGroup(replacing: .appInfo) {
+                Button("About biblioteca") { isAboutPresented = true }
+            }
             CommandGroup(replacing: .newItem) {
                 Button("Add Books…") { FilePanels.chooseBooks { queue.add($0) } }
                     .keyboardShortcut("o")
