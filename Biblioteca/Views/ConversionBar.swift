@@ -35,13 +35,13 @@ struct ConversionBar: View {
             Spacer()
 
             if queue.isRunning {
-                Text("\(queue.doneCount) of \(queue.jobs.count)")
+                Text("\(queue.runDoneCount) of \(queue.runIDs.count)")
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                 Button("Stop", role: .cancel) { queue.cancel() }
                     .keyboardShortcut(.escape, modifiers: [])
             } else {
-                Button("Convert") { queue.start() }
+                Button(queue.isSearching ? "Convert \(queue.pendingVisibleCount)" : "Convert") { queue.start() }
                     .keyboardShortcut(.return, modifiers: .command)
                     .buttonStyle(.borderedProminent)
                     .disabled(!queue.canStart)

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Batch: a search field above the list narrows a long library by book name
+  and folder, ignoring case and accents. While a search is active, Convert
+  takes only the books it shows.
 - Title, author and cover can be set for each book before converting (the
   tag button on a row, or its context menu). PDF is written natively, the
   cover becoming the first page; EPUB, MOBI, AZW3 and FB2 need Calibre's
