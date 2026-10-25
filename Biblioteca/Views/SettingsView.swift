@@ -31,8 +31,28 @@ private struct GeneralSettings: View {
             Text("Black & white suits text and keeps files small; color keeps pictures. Higher resolution gives sharper pages and larger files.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            Section("OCR") {
+                Picker("Language of scans", selection: $settings.conversion.ocrLanguage) {
+                    ForEach(OCRLanguage.allCases) { Text($0.displayName).tag($0) }
+                }
+                Text(recognizerNote)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
+    }
+}
+
+private extension GeneralSettings {
+    var recognizerNote: String {
+        let language = settings.conversion.ocrLanguage
+        guard let ocr = settings.ocr else {
+            return "\(language.displayName) is read by Tesseract, which is not installed. See Engines."
+        }
+        return "\(language.displayName) is read by \(ocr.recognizer.name), on this Mac. "
+            + "Turn on OCR scans beside Convert to use it."
     }
 }
 

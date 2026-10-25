@@ -31,6 +31,8 @@ struct ToolLocator: Sendable {
         ("djvm", .djvulibre, "PDF → DjVu (bundler)", "brew install djvulibre"),
         ("djvused", .djvulibre, "PDF → DjVu text layer (search)", "brew install djvulibre"),
         ("djvutxt", .djvulibre, "DjVu → TXT", "brew install djvulibre"),
+        ("tesseract", .tesseract, "OCR for Greek, which Apple Vision cannot read",
+         "brew install tesseract tesseract-lang"),
     ]
 
     let tools: [ExternalTool]

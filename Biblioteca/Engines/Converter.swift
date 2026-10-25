@@ -5,6 +5,7 @@ struct ConversionSettings: Sendable, Equatable {
     var paper: PaperSize = .a4
     var djvuDPI: Int = 300
     var djvuEncoding: DjVuEncoding = .blackAndWhite
+    var ocrLanguage: OCRLanguage = .greek
 
     static let djvuDPIChoices = [150, 200, 300, 400, 600]
 
@@ -15,9 +16,12 @@ struct ConversionSettings: Sendable, Equatable {
 /// scratch folder, and moves only a finished result next to the user's files.
 struct Converter: Sendable {
     let planner: ConversionPlanner
+    /// Recognises text on scanned pages before converting; nil leaves scans as they are.
+    let ocr: OCRProcessor?
 
-    init(engines: [any ConversionEngine]) {
+    init(engines: [any ConversionEngine], ocr: OCRProcessor? = nil) {
         planner = ConversionPlanner(engines: engines)
+        self.ocr = ocr
     }
 
     /// Engines in order of preference, built from the tools found on this Mac.
@@ -43,36 +47,49 @@ struct Converter: Sendable {
         guard let source = BookFormat(url: input) else {
             throw ConversionError.unreadableDocument(input.lastPathComponent)
         }
-        guard let steps = route(from: source, to: target) else {
-            throw ConversionError.unsupportedRoute(from: source, to: target)
-        }
-
         let workspace = try TemporaryDirectory()
         defer { workspace.remove() }
         let baseName = input.deletingPathExtension().lastPathComponent
 
+        let result: URL
+        if let ocr, OCRRoute.recognizes(source) {
+            result = try await convertRecognizing(input, from: source, to: target, ocr: ocr,
+                                                  workspace: workspace.url, baseName: baseName, progress: progress)
+        } else {
+            guard let steps = route(from: source, to: target) else {
+                throw ConversionError.unsupportedRoute(from: source, to: target)
+            }
+            result = try await run(steps, from: input, workspace: workspace.url, name: baseName, progress: progress)
+        }
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let destination = Self.availableURL(in: directory, baseName: baseName, fileExtension: target.fileExtension)
+        try FileManager.default.moveItem(at: result, to: destination)
+        return destination
+    }
+
+    /// Runs the steps one after another in `workspace`, each sharing the progress equally.
+    func run(_ steps: [ConversionStep], from input: URL, workspace: URL, name: String,
+             progress: @escaping ProgressHandler) async throws -> URL {
         var current = input
         for (index, step) in steps.enumerated() {
             try Task.checkCancellation()
-            let next = workspace.url.appendingPathComponent("\(index)-\(baseName).\(step.target.fileExtension)")
+            let next = try Self.scratchURL(in: workspace, name: name, fileExtension: step.target.fileExtension)
             let share = 1 / Double(steps.count)
             try await run(step, input: current, output: next) { fraction in
                 progress(fraction.map { (Double(index) + $0) * share })
             }
             current = next
         }
-
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let destination = Self.availableURL(in: directory, baseName: baseName, fileExtension: target.fileExtension)
-        try FileManager.default.moveItem(at: current, to: destination)
-        return destination
+        return current
     }
 
     /// Tries the planned engine first, then every other engine that can do the
     /// same step, so one crashing tool does not fail a book another tool can convert.
     private func run(_ step: ConversionStep, input: URL, output: URL,
                      progress: @escaping ProgressHandler) async throws {
-        let candidates = planner.engines.filter { $0.canConvert(from: step.source, to: step.target) }
+        let capable = planner.engines.filter { $0.canConvert(from: step.source, to: step.target) }
+        let candidates = capable.filter { $0.id == step.engine.id } + capable.filter { $0.id != step.engine.id }
         var firstError: Error?
         for engine in candidates {
             try Task.checkCancellation()
@@ -94,6 +111,14 @@ struct Converter: Sendable {
             }
         }
         throw firstError ?? ConversionError.unsupportedRoute(from: step.source, to: step.target)
+    }
+
+    /// A file named after the book in a folder of its own, since converters
+    /// take a book's title from its file name when it has no title inside.
+    static func scratchURL(in workspace: URL, name: String, fileExtension: String) throws -> URL {
+        let folder = workspace.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        return folder.appendingPathComponent(name).appendingPathExtension(fileExtension)
     }
 
     /// `name.ext`, or `name 2.ext`, `name 3.ext`… so an existing file is never overwritten.

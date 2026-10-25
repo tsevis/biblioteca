@@ -89,3 +89,23 @@ private final class OutputLog: @unchecked Sendable {
         lines.forEach { onLine?($0) }
     }
 }
+
+extension ProcessRunner {
+    /// Runs the tool and returns the lines it printed.
+    static func lines(of executable: URL, arguments: [String]) async throws -> [String] {
+        let collector = LineCollector()
+        try await run(executable, arguments: arguments) { collector.append($0) }
+        return collector.lines
+    }
+}
+
+private final class LineCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private var collected: [String] = []
+
+    var lines: [String] { lock.withLock { collected } }
+
+    func append(_ line: String) {
+        lock.withLock { collected.append(line) }
+    }
+}
