@@ -27,7 +27,7 @@ struct ConversionPlanner: Sendable {
         return [first, second]
     }
 
-    private func directStep(from source: BookFormat, to target: BookFormat) -> ConversionStep? {
+    func directStep(from source: BookFormat, to target: BookFormat) -> ConversionStep? {
         engines
             .first { $0.canConvert(from: source, to: target) }
             .map { ConversionStep(engine: $0, source: source, target: target) }

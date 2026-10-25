@@ -4,7 +4,7 @@ import Foundation
 typealias ProgressHandler = @Sendable (Double?) -> Void
 
 enum EngineID: String, Sendable, CaseIterable {
-    case calibre, djvulibre, mupdf, native
+    case calibre, djvulibre, mupdf, native, tesseract
 
     var displayName: String {
         switch self {
@@ -12,6 +12,7 @@ enum EngineID: String, Sendable, CaseIterable {
         case .djvulibre: "DjVuLibre"
         case .mupdf: "MuPDF"
         case .native: "biblioteca"
+        case .tesseract: "Tesseract"
         }
     }
 }
@@ -36,6 +37,7 @@ enum ConversionError: LocalizedError, Equatable {
     case toolFailed(tool: String, status: Int32, detail: String)
     case toolCrashed(tool: String, signal: Int32, detail: String)
     case outputMissing(String)
+    case alreadySearchable
 
     var errorDescription: String? {
         switch self {
@@ -44,13 +46,15 @@ enum ConversionError: LocalizedError, Equatable {
         case let .unreadableDocument(name):
             "Could not open \(name)."
         case .noTextLayer:
-            "This book has no text layer (it is probably scanned). Run OCR on it first."
+            "This book has no text layer (it is probably scanned). Turn on OCR scans and convert it again."
         case let .toolFailed(tool, status, detail):
             "\(tool) failed (exit \(status)). \(detail)"
         case let .toolCrashed(tool, signal, detail):
             "\(tool) crashed (signal \(signal)). Try again. \(detail)"
         case let .outputMissing(name):
             "The converter finished but did not produce \(name)."
+        case .alreadySearchable:
+            "Every page already has text, so there was nothing to recognise."
         }
     }
 }

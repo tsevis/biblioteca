@@ -33,6 +33,12 @@ press Convert.
   on the page, with words hyphenated across lines joined again.
 - **Makes searchable DjVu.** PDF → DjVu encodes pages in black and white (small
   files, right for text) or in colour, and copies the PDF's text into the DjVu.
+- **Reads scans (OCR).** With *OCR scans* on, scanned PDF and DjVu pages are
+  recognised on this Mac: Apple Vision for the languages it reads, Tesseract
+  for Greek, which Vision does not. A scanned PDF becomes a searchable PDF
+  that looks the same, a scanned DjVu gains a text layer, and either can
+  become EPUB, MOBI, TXT and the rest, built from the recognised text rather
+  than page pictures. Pages that already have text are left alone.
 - **Stays on this Mac.** Nothing is uploaded anywhere.
 
 ## Engines
@@ -47,6 +53,8 @@ higher in this table wins.
 | DjVuLibre (`ddjvu`, `cjb2`, `c44`, `djvm`, `djvused`, `djvutxt`) | `brew install djvulibre` | DjVu → PDF/TXT; PDF → DjVu |
 | MuPDF (`mutool`) | `brew install mupdf-tools` | EPUB, MOBI, FB2, CBZ, XPS, HTML, TXT → PDF; → TXT |
 | built in (PDFKit) | — | PDF → EPUB, PDF → TXT |
+| Apple Vision | — | OCR in English, French, German, Italian, Spanish, Portuguese |
+| Tesseract (`tesseract`) | `brew install tesseract tesseract-lang` | OCR in Greek, monotonic and polytonic |
 
 ## Settings
 
@@ -56,13 +64,22 @@ higher in this table wins.
   pictures). On a page of plain text at 300 dpi, black and white came to about
   9 KB and colour to about 1.4 MB.
 - **DjVu resolution**: 150 to 600 dpi.
+- **Language of scans** for OCR, which picks the recogniser. Greek is read
+  together with English, since Greek books often quote it. *OCR scans* itself
+  is switched on per tab, beside Convert.
 
 ## Limits
 
-- PDF → EPUB needs a text layer. Scanned PDFs need OCR first; biblioteca says
-  so instead of producing an empty book.
-- DjVu → PDF, and therefore DjVu → EPUB or MOBI, gives page images: `ddjvu`
-  does not carry a DjVu's text into the PDF. DjVu → TXT gives the text.
+- PDF → EPUB needs a text layer. With *OCR scans* off, a scanned PDF fails
+  with a message saying so instead of producing an empty book.
+- DjVu → PDF, and therefore DjVu → EPUB or MOBI, gives page images unless
+  *OCR scans* is on: `ddjvu` does not carry a DjVu's text into the PDF, so
+  with OCR the pages are recognised again.
+- OCR rebuilds paragraphs, not layout: tables, columns and footnotes come out
+  as running text. Tesseract's Greek model sometimes puts polytonic accents
+  into monotonic text ("φῶς" for "φως").
+- The first Apple Vision recognition can be slow: a one-page book took 109 s
+  the first time on the development Mac, and under 3 s afterwards.
 - Without a UTF-8 locale, as in any app launched from Finder, DjVuLibre's
   `djvm` mangles non-ASCII file names. The DjVu engine therefore runs its tools
   on ASCII-named copies, and the result keeps its real name.
@@ -100,6 +117,7 @@ python3 Scripts/make-icon.py
 |---|---|
 | `Biblioteca/Model` | Formats, jobs, paper sizes |
 | `Biblioteca/Engines` | The converters, the route planner, process running |
+| `Biblioteca/Engines/OCR` | Recognisers, searchable PDF, DjVu text from scans |
 | `Biblioteca/Services` | The conversion queue and saved preferences |
 | `Biblioteca/Views` | Window, splash screen, settings, the TVD mark |
 | `Biblioteca/Resources` | Icon, splash art, logo, Info.plist |

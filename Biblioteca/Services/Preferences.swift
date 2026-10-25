@@ -12,6 +12,8 @@ struct Preferences: @unchecked Sendable {
         static let paper = "paperSize"
         static let djvuDPI = "djvuDPI"
         static let djvuEncoding = "djvuEncoding"
+        static let recognizeScans = "recognizeScans"
+        static let ocrLanguage = "ocrLanguage"
     }
 
     private let defaults: UserDefaults
@@ -40,6 +42,12 @@ struct Preferences: @unchecked Sendable {
         nonmutating set { defaults.set(newValue, forKey: prefix + Key.skipExisting) }
     }
 
+    /// Run OCR on books that are page scans. Off by default: it is slow.
+    var recognizeScans: Bool {
+        get { defaults.bool(forKey: prefix + Key.recognizeScans) }
+        nonmutating set { defaults.set(newValue, forKey: prefix + Key.recognizeScans) }
+    }
+
     var settings: ConversionSettings {
         get {
             let paper = defaults.string(forKey: Key.paper).flatMap(PaperSize.init(rawValue:)) ?? .a4
@@ -47,12 +55,14 @@ struct Preferences: @unchecked Sendable {
             let validDPI = ConversionSettings.djvuDPIChoices.contains(dpi) ? dpi : 300
             let encoding = defaults.string(forKey: Key.djvuEncoding)
                 .flatMap(DjVuEncoding.init(rawValue:)) ?? .blackAndWhite
-            return ConversionSettings(paper: paper, djvuDPI: validDPI, djvuEncoding: encoding)
+            let language = defaults.string(forKey: Key.ocrLanguage).flatMap(OCRLanguage.init(rawValue:)) ?? .greek
+            return ConversionSettings(paper: paper, djvuDPI: validDPI, djvuEncoding: encoding, ocrLanguage: language)
         }
         nonmutating set {
             defaults.set(newValue.paper.rawValue, forKey: Key.paper)
             defaults.set(newValue.djvuDPI, forKey: Key.djvuDPI)
             defaults.set(newValue.djvuEncoding.rawValue, forKey: Key.djvuEncoding)
+            defaults.set(newValue.ocrLanguage.rawValue, forKey: Key.ocrLanguage)
         }
     }
 }

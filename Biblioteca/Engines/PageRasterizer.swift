@@ -47,6 +47,16 @@ enum PageRasterizer {
         try (Data("P4\n\(width) \(height)\n".utf8) + Data(bytes)).write(to: url)
     }
 
+    /// A grey image of the page as a reader sees it, for text recognition.
+    static func image(of page: PDFPage, dpi: Int) throws -> CGImage {
+        let context = try render(page, dpi: dpi, space: CGColorSpaceCreateDeviceGray(),
+                                 bitmapInfo: CGImageAlphaInfo.none.rawValue)
+        guard let image = context.makeImage() else {
+            throw ConversionError.unreadableDocument("page \(page.label ?? "?")")
+        }
+        return image
+    }
+
     private static func render(_ page: PDFPage, dpi: Int, space: CGColorSpace,
                                bitmapInfo: UInt32) throws -> CGContext {
         let bounds = page.bounds(for: .mediaBox)

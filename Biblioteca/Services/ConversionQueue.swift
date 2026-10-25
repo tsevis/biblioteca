@@ -34,6 +34,11 @@ final class ConversionQueue {
         didSet { preferences.skipExisting = skipExisting }
     }
 
+    /// Recognise text on scanned PDF and DjVu pages before converting.
+    var recognizeScans: Bool {
+        didSet { preferences.recognizeScans = recognizeScans }
+    }
+
     private let preferences: Preferences
     private var batch: Task<Void, Never>?
 
@@ -44,6 +49,11 @@ final class ConversionQueue {
         targetFormat = preferences.targetFormat
         outputDirectory = preferences.outputDirectory
         skipExisting = preferences.skipExisting
+        recognizeScans = preferences.recognizeScans
+    }
+
+    private var converter: Converter {
+        settings.converter(recognizingScans: recognizeScans && settings.ocr != nil)
     }
 
     // MARK: Queue editing
@@ -97,10 +107,8 @@ final class ConversionQueue {
 
     /// The engines a job would pass through, e.g. "DjVuLibre → Calibre", or nil if none can.
     func routeDescription(for job: ConversionJob) -> String? {
-        guard let format = job.format,
-              let steps = settings.converter.route(from: format, to: targetFormat)
-        else { return nil }
-        return steps.map(\.engine.id.displayName).joined(separator: " → ")
+        guard let format = job.format else { return nil }
+        return converter.routeDescription(from: format, to: targetFormat)
     }
 
     var canStart: Bool {
@@ -116,7 +124,7 @@ final class ConversionQueue {
         guard canStart else { return }
         isRunning = true
         let target = targetFormat
-        let converter = settings.converter
+        let converter = converter
         let pending = jobs.filter(\.isPending).map(\.id)
         batch = Task {
             for id in pending {
@@ -141,7 +149,9 @@ final class ConversionQueue {
 
     private func run(_ id: ConversionJob.ID, to target: BookFormat, with converter: Converter) async {
         guard let job = jobs.first(where: { $0.id == id }) else { return }
-        guard job.format != target else {
+        // A scan made searchable stays in its own format, so OCR allows PDF → PDF and DjVu → DjVu.
+        let recognizes = converter.ocr != nil && OCRRoute.recognizes(target)
+        guard job.format != target || recognizes else {
             update(id, .skipped("Already \(target.displayName)"))
             return
         }
@@ -163,6 +173,8 @@ final class ConversionQueue {
             update(id, .finished(result))
         } catch is CancellationError {
             update(id, .cancelled)
+        } catch ConversionError.alreadySearchable {
+            update(id, .skipped("Already searchable"))
         } catch {
             Self.log.error("Converting \(job.source.path, privacy: .public) failed: \(error, privacy: .public)")
             update(id, Task.isCancelled ? .cancelled : .failed(error.localizedDescription))

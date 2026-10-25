@@ -7,6 +7,13 @@
   cover becoming the first page; EPUB, MOBI, AZW3 and FB2 need Calibre's
   `ebook-meta`, DjVu titles need DjVuLibre. A row warns when the target
   format cannot hold a field.
+- OCR: an *OCR scans* switch in each tab recognises scanned PDF and DjVu
+  pages, with Apple Vision where it reads the language and Tesseract for
+  Greek. Scans become searchable PDFs, DjVu files gain a text layer, and EPUB,
+  MOBI or TXT are built from the recognised text. The language is chosen in
+  Settings → General.
+- A conversion step now runs on the engine the route planned, falling back to
+  the others only if it fails; before, the first capable engine always ran.
 - The splash screen's banner is a photograph of a real bookshelf
   (`documents/bookshelf.jpg`), with a deeper scrim so the type stays legible.
 - Folders can be dropped or chosen; every book inside them and their
