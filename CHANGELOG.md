@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- biblioteca stands alone: MuPDF, DjVuLibre and Tesseract with its English,
+  Greek and polytonic Greek models are built into the app, which no longer
+  looks for anything installed on the Mac.
+- Calibre is gone, and with it AZW3. Output formats are PDF, EPUB, DjVu and
+  TXT; MOBI and FB2 are still read.
+- EPUB title, author and cover are written natively. DOCX and RTF become PDF
+  natively, laid out on the chosen page size.
+
 ## 0.2.0 — 2026-10-25
 
 - A progress bar for the whole run sits beside "N of M" while converting,

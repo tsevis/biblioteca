@@ -28,10 +28,10 @@ struct ConversionPlannerTests {
     @Test("Earlier engines win when several convert directly")
     func prefersEarlierEngine() {
         let planner = ConversionPlanner(engines: [
-            FakeEngine(.calibre, [(.epub, .pdf)]),
             FakeEngine(.mupdf, [(.epub, .pdf)]),
+            FakeEngine(.native, [(.epub, .pdf)]),
         ])
-        #expect(describe(planner.plan(from: .epub, to: .pdf)) == ["calibre:epub>pdf"])
+        #expect(describe(planner.plan(from: .epub, to: .pdf)) == ["mupdf:epub>pdf"])
     }
 
     @Test("Routes through PDF when no engine converts directly")

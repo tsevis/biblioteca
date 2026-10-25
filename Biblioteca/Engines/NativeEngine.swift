@@ -2,16 +2,28 @@ import Foundation
 import NaturalLanguage
 import PDFKit
 
-/// Conversions biblioteca performs itself with PDFKit, without external tools.
+/// Conversions biblioteca performs itself, without external tools: PDF to
+/// text and EPUB with PDFKit, Word and RTF to PDF with the macOS text system.
 struct NativeEngine: ConversionEngine {
     let id = EngineID.native
+    var layout: PageLayout = .a4
 
     func canConvert(from source: BookFormat, to target: BookFormat) -> Bool {
-        source == .pdf && (target == .txt || target == .epub)
+        switch (source, target) {
+        case (.pdf, .txt), (.pdf, .epub): true
+        case (_, .pdf): DocumentRenderer.documentType(of: source) != nil
+        default: false
+        }
     }
 
     func convert(_ input: URL, to output: URL, from source: BookFormat, target: BookFormat,
                  progress: @escaping ProgressHandler) async throws {
+        if target == .pdf, let type = DocumentRenderer.documentType(of: source) {
+            progress(nil)
+            try DocumentRenderer.renderPDF(of: input, type: type, layout: layout, to: output)
+            progress(1)
+            return
+        }
         guard let document = PDFDocument(url: input) else {
             throw ConversionError.unreadableDocument(input.lastPathComponent)
         }

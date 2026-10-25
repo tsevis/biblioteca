@@ -29,20 +29,17 @@ struct Converter: Sendable {
 
     /// The metadata writer, built from the tools found on this Mac.
     static func metadataWriter(tools: ToolLocator) -> MetadataWriter {
-        MetadataWriter(ebookMeta: tools.url(for: "ebook-meta"), djvused: tools.url(for: "djvused"))
+        MetadataWriter(djvused: tools.url(for: "djvused"))
     }
 
     /// Engines in order of preference, built from the tools found on this Mac.
     static func availableEngines(tools: ToolLocator, settings: ConversionSettings) -> [any ConversionEngine] {
-        let calibre = tools.url(for: "ebook-convert").map {
-            CalibreEngine(ebookConvert: $0, layout: settings.pageLayout)
-        }
         let djvuTools = DjVuTools(ddjvu: tools.url(for: "ddjvu"), djvutxt: tools.url(for: "djvutxt"),
                                   c44: tools.url(for: "c44"), cjb2: tools.url(for: "cjb2"),
                                   djvm: tools.url(for: "djvm"), djvused: tools.url(for: "djvused"))
         let djvu = DjVuEngine(tools: djvuTools, dpi: settings.djvuDPI, encoding: settings.djvuEncoding)
         let mupdf = tools.url(for: "mutool").map { MuPDFEngine(mutool: $0, layout: settings.pageLayout) }
-        let candidates: [(any ConversionEngine)?] = [calibre, djvu, mupdf, NativeEngine()]
+        let candidates: [(any ConversionEngine)?] = [djvu, mupdf, NativeEngine(layout: settings.pageLayout)]
         return candidates.compactMap { $0 }
     }
 

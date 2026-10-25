@@ -18,23 +18,16 @@ enum MetadataError: LocalizedError, Equatable {
 
 /// Reads and writes a book's title, author and cover.
 ///
-/// PDF is handled natively with PDFKit. E-book formats go through Calibre's
-/// `ebook-meta`, and DjVu through `djvused`, when those tools are installed.
+/// PDF is handled with PDFKit and EPUB by editing its package document, both
+/// natively; DjVu goes through `djvused`.
 struct MetadataWriter: Sendable {
-    var ebookMeta: URL?
     var djvused: URL?
-
-    private static let ebookMetaFormats: Set<BookFormat> = [.epub, .mobi, .azw3, .fb2]
 
     /// The fields that can be written into a book of `format` on this Mac.
     func supportedFields(for format: BookFormat) -> Set<BookMetadata.Field> {
         switch format {
-        case .pdf:
+        case .pdf, .epub:
             return Set(BookMetadata.Field.allCases)
-        case _ where Self.ebookMetaFormats.contains(format):
-            return ebookMeta == nil ? [] : Set(BookMetadata.Field.allCases)
-        case .docx:
-            return ebookMeta == nil ? [] : [.title, .author]
         case .djvu:
             return djvused == nil ? [] : [.title, .author]
         default:
@@ -56,9 +49,10 @@ struct MetadataWriter: Sendable {
         case .djvu:
             guard let djvused else { return }
             try await ProcessRunner.run(djvused, arguments: [file.path, "-e", Self.djvusedScript(for: wanted)])
+        case .epub:
+            try await EPUBMetadata.write(wanted, to: file)
         default:
-            guard let ebookMeta else { return }
-            try await ProcessRunner.run(ebookMeta, arguments: [file.path] + Self.ebookMetaArguments(for: wanted))
+            return
         }
     }
 
@@ -69,11 +63,8 @@ struct MetadataWriter: Sendable {
             let attributes = PDFDocument(url: file)?.documentAttributes
             return BookMetadata(title: attributes?[PDFDocumentAttribute.titleAttribute] as? String ?? "",
                                 author: attributes?[PDFDocumentAttribute.authorAttribute] as? String ?? "")
-        case _ where Self.ebookMetaFormats.union([.docx]).contains(format):
-            guard let ebookMeta else { return .empty }
-            let report = ReportCollector()
-            try? await ProcessRunner.run(ebookMeta, arguments: [file.path]) { report.append($0) }
-            return Self.parseEbookMeta(report.text)
+        case .epub:
+            return (try? await EPUBMetadata.read(file)) ?? .empty
         default:
             return .empty
         }
@@ -120,14 +111,6 @@ struct MetadataWriter: Sendable {
 
     // MARK: Command lines
 
-    static func ebookMetaArguments(for metadata: BookMetadata) -> [String] {
-        var arguments: [String] = []
-        if !metadata.title.isEmpty { arguments += ["--title", metadata.title] }
-        if !metadata.author.isEmpty { arguments += ["--authors", metadata.author] }
-        if let cover = metadata.cover { arguments += ["--cover", cover.path] }
-        return arguments
-    }
-
     /// A djvused script that replaces the document's title and author.
     static func djvusedScript(for metadata: BookMetadata) -> String {
         var lines = ["select", "set-meta"]
@@ -143,30 +126,4 @@ struct MetadataWriter: Sendable {
             .replacingOccurrences(of: "\"", with: "\\\"")
         return "\"\(escaped)\""
     }
-
-    /// Title and authors from `ebook-meta`'s report, without the "[sort]" keys.
-    static func parseEbookMeta(_ report: String) -> BookMetadata {
-        var values: [String: String] = [:]
-        for line in report.components(separatedBy: .newlines) {
-            guard let colon = line.firstIndex(of: ":") else { continue }
-            let key = line[..<colon].trimmingCharacters(in: .whitespaces)
-            values[key] = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces)
-        }
-        // Sort keys go first: one key may hold several authors and their "&".
-        let authors = (values["Author(s)"] ?? "")
-            .replacingOccurrences(of: #"\s*\[[^\]]*\]"#, with: "", options: .regularExpression)
-            .components(separatedBy: "&")
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-        return BookMetadata(title: values["Title"] ?? "", author: authors.joined(separator: " & "))
-    }
-}
-
-/// Gathers a tool's report from the pipe's background queue.
-private final class ReportCollector: @unchecked Sendable {
-    private let lock = NSLock()
-    private var lines: [String] = []
-
-    func append(_ line: String) { lock.withLock { lines.append(line) } }
-    var text: String { lock.withLock { lines.joined(separator: "\n") } }
 }

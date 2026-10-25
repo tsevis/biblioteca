@@ -4,11 +4,10 @@ import Foundation
 typealias ProgressHandler = @Sendable (Double?) -> Void
 
 enum EngineID: String, Sendable, CaseIterable {
-    case calibre, djvulibre, mupdf, native, tesseract
+    case djvulibre, mupdf, native, tesseract
 
     var displayName: String {
         switch self {
-        case .calibre: "Calibre"
         case .djvulibre: "DjVuLibre"
         case .mupdf: "MuPDF"
         case .native: "biblioteca"

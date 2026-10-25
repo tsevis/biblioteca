@@ -110,7 +110,7 @@ final class ConversionQueue {
 
     // MARK: Routing
 
-    /// The engines a job would pass through, e.g. "DjVuLibre → Calibre", or nil if none can.
+    /// The engines a job would pass through, e.g. "DjVuLibre → biblioteca", or nil if none can.
     func routeDescription(for job: ConversionJob) -> String? {
         guard let format = job.format else { return nil }
         return converter.routeDescription(from: format, to: targetFormat)

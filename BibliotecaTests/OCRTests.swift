@@ -64,7 +64,7 @@ struct OCRTests {
 
 /// Converts PDF to text without reading the text layer, as a converter that keeps page images would.
 private struct ImageCopyingEngine: ConversionEngine {
-    let id = EngineID.calibre
+    let id = EngineID.mupdf
 
     func canConvert(from source: BookFormat, to target: BookFormat) -> Bool {
         source == .pdf && (target == .txt || target == .epub)

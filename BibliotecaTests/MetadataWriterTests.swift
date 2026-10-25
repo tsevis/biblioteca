@@ -40,22 +40,25 @@ struct MetadataWriterTests {
         """)
     }
 
-    @Test("Reads title and authors from ebook-meta's report, without the sort key")
-    func parsesEbookMetaOutput() {
-        let report = """
-        Title               : The Name of the Rose
-        Title sort          : Name of the Rose, The
-        Author(s)           : Umberto Eco [Eco, Umberto] & William Weaver [Weaver, William]
-        Languages           : eng
-        """
-        #expect(MetadataWriter.parseEbookMeta(report)
-            == BookMetadata(title: "The Name of the Rose", author: "Umberto Eco & William Weaver"))
-    }
+    @Test("An EPUB gets the new title, authors and cover without Calibre, and reads them back")
+    func writesEPUBMetadataNatively() async throws {
+        let workspace = try TemporaryDirectory()
+        defer { workspace.remove() }
+        let epub = workspace.url.appendingPathComponent("book.epub")
+        try await EPUBWriter.write(title: "Χωρίς τίτλο", author: nil, language: "el",
+                                   chapters: [EPUBChapter(title: "Α", paragraphs: ["Κείμενο."])], to: epub)
+        let cover = workspace.url.appendingPathComponent("cover.png")
+        try Self.redSquarePNG().write(to: cover)
 
-    @Test("An \"&\" inside the sort key does not split an author")
-    func ignoresAmpersandInSortKey() {
-        let report = "Author(s)           : Όμηρος & Κανείς [Όμηρος & Κανείς]"
-        #expect(MetadataWriter.parseEbookMeta(report).author == "Όμηρος & Κανείς")
+        let metadata = BookMetadata(title: "Λόγια της Πλώρης", author: "Ανδρέας Καρκαβίτσας & Κανείς", cover: cover)
+        let writer = MetadataWriter()
+        try await writer.apply(metadata, to: epub, format: .epub)
+
+        #expect(await writer.read(epub, format: .epub)
+            == BookMetadata(title: "Λόγια της Πλώρης", author: "Ανδρέας Καρκαβίτσας & Κανείς"))
+        let files = try await ProcessRunner.lines(of: URL(fileURLWithPath: "/usr/bin/unzip"), arguments: ["-Z1", epub.path])
+        #expect(files.first == "mimetype")
+        #expect(files.contains { $0.hasSuffix("cover.png") })
     }
 
     private static func redSquarePNG() throws -> Data {

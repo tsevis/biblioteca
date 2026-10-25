@@ -16,12 +16,13 @@ struct OCRProcessor: Sendable {
 
     /// Apple Vision where it reads the language, otherwise Tesseract; nil
     /// when the language needs Tesseract and it is not installed.
-    static func make(language: OCRLanguage, tesseract: URL?) -> OCRProcessor? {
+    static func make(language: OCRLanguage, tesseract: URL?, tessdata: URL? = nil) -> OCRProcessor? {
         if let code = language.visionCode {
             return OCRProcessor(recognizer: VisionRecognizer(languages: [code]), dpi: defaultDPI)
         }
         return tesseract.map {
-            OCRProcessor(recognizer: TesseractRecognizer(tesseract: $0, languages: language.tesseractCode),
+            OCRProcessor(recognizer: TesseractRecognizer(tesseract: $0, languages: language.tesseractCode,
+                                                       tessdata: tessdata),
                          dpi: defaultDPI)
         }
     }

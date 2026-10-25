@@ -9,6 +9,8 @@ struct TesseractRecognizer: TextRecognizer {
     let tesseract: URL
     /// Tesseract language codes joined by "+", for example "ell+eng".
     let languages: String
+    /// Folder of `.traineddata` models; nil uses Tesseract's installed ones.
+    var tessdata: URL?
 
     func recognize(_ image: CGImage, pageSize: CGSize) async throws -> [TextLine] {
         let workspace = try TemporaryDirectory()
@@ -17,8 +19,9 @@ struct TesseractRecognizer: TextRecognizer {
         try Self.writePNG(image, to: png)
         let base = workspace.url.appendingPathComponent("page")
         let dpi = Int((CGFloat(image.width) / pageSize.width * 72).rounded())
+        let models = tessdata.map { ["--tessdata-dir", $0.path] } ?? []
         try await ProcessRunner.run(tesseract, arguments: [png.path, base.path, "-l", languages,
-                                                           "--dpi", String(dpi), "tsv"]) { _ in }
+                                                           "--dpi", String(dpi)] + models + ["tsv"]) { _ in }
         let tsv = try String(contentsOf: base.appendingPathExtension("tsv"), encoding: .utf8)
         let lines = TesseractTSV.lines(from: tsv, imageHeight: image.height,
                                        scale: CGFloat(image.height) / pageSize.height)

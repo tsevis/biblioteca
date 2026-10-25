@@ -3,7 +3,7 @@ import AppKit
 /// The app's artwork and identity: the TVD mark, the splash key art and the version.
 enum Brand {
     static let name = "biblioteca"
-    static let tagline = "Converts books between PDF, EPUB, MOBI, DjVu and more."
+    static let tagline = "Converts books between PDF, EPUB, DjVu and more."
     static let website = URL(string: "https://tsevis.com")
     static let github = URL(string: "https://github.com/tsevis")
 

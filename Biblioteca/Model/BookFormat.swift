@@ -2,7 +2,7 @@ import Foundation
 
 /// A book or document format that biblioteca can read or write.
 enum BookFormat: String, CaseIterable, Identifiable, Sendable {
-    case pdf, epub, mobi, azw3, djvu, fb2, cbz, xps, txt, docx, rtf, html
+    case pdf, epub, mobi, djvu, fb2, cbz, xps, txt, docx, rtf, html
 
     var id: String { rawValue }
 
@@ -11,7 +11,6 @@ enum BookFormat: String, CaseIterable, Identifiable, Sendable {
         .pdf: ["pdf"],
         .epub: ["epub"],
         .mobi: ["mobi", "prc", "azw"],
-        .azw3: ["azw3", "kf8"],
         .djvu: ["djvu", "djv"],
         .fb2: ["fb2"],
         .cbz: ["cbz"],
@@ -23,7 +22,7 @@ enum BookFormat: String, CaseIterable, Identifiable, Sendable {
     ]
 
     /// Formats offered as conversion targets in the interface.
-    static let outputFormats: [BookFormat] = [.pdf, .epub, .mobi, .azw3, .djvu, .fb2, .docx, .txt]
+    static let outputFormats: [BookFormat] = [.pdf, .epub, .djvu, .txt]
 
     init?(fileExtension: String) {
         let ext = fileExtension.lowercased()
@@ -43,7 +42,6 @@ enum BookFormat: String, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
-        case .azw3: "AZW3"
         case .djvu: "DjVu"
         default: rawValue.uppercased()
         }

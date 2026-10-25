@@ -11,7 +11,7 @@ struct ConversionStep: Sendable {
 ///
 /// Engines are tried in the order given, so earlier engines win. When no engine
 /// converts directly, the planner routes through PDF, which every engine family
-/// speaks (for example DjVu → PDF with DjVuLibre, then PDF → EPUB with Calibre).
+/// speaks (for example DjVu → PDF with DjVuLibre, then PDF → EPUB with biblioteca's own reader).
 struct ConversionPlanner: Sendable {
     let engines: [any ConversionEngine]
 

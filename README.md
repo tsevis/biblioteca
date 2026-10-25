@@ -2,8 +2,8 @@
 
 <img src="documents/icon.png" width="128" align="right" alt="biblioteca's icon: a shelf of coloured book spines on deep blue, the last volume leaning on the others.">
 
-A native macOS app that converts books between **PDF, EPUB, MOBI, AZW3, DjVu,
-FB2** and more. Drop books on the window, choose what they should become, and
+A native macOS app that converts books between **PDF, EPUB, MOBI, DjVu,
+FB2** and more. Everything it needs is inside the app: nothing to install. Drop books on the window, choose what they should become, and
 press Convert.
 
 **Version 0.2.0.** SwiftUI, macOS 15 or later. See [CHANGELOG.md](CHANGELOG.md).
@@ -21,14 +21,15 @@ press Convert.
   format, are skipped. A search field above the Batch list narrows it by
   name and folder, and Convert then takes only the books shown. Each book
   shows its route
-  (e.g. `DjVu → EPUB · DjVuLibre → Calibre`), its progress and its result.
+  (e.g. `DjVu → EPUB · DjVuLibre → built in`), its progress and its result.
 - **Never touches the originals.** Results go beside each original or into a
   folder you choose. An existing file is never overwritten: the new one becomes
   `Book 2.pdf`. A conversion that fails or is stopped leaves nothing behind.
-- **Uses the best tool installed.** biblioteca has no converter of its own for
-  most formats. It finds Calibre, DjVuLibre and MuPDF on this Mac and routes
-  each book through them, going through PDF when no single tool can do the
-  whole job. If one tool fails on a step, the next one that can do the same
+- **Stands alone.** MuPDF, DjVuLibre and Tesseract (with its English, Greek
+  and polytonic Greek models) are copied into the app when it is built, so it
+  runs on a Mac with nothing installed. Each book is routed through them and
+  biblioteca's own converters, going through PDF when no single tool can do
+  the whole job. If one tool fails on a step, the next one that can do the same
   step is tried.
 - **Reads PDFs itself.** PDF → EPUB and PDF → TXT work with nothing installed:
   PDFKit extracts the text and paragraphs are rebuilt from where each line sits
@@ -39,24 +40,27 @@ press Convert.
   recognised on this Mac: Apple Vision for the languages it reads, Tesseract
   for Greek, which Vision does not. A scanned PDF becomes a searchable PDF
   that looks the same, a scanned DjVu gains a text layer, and either can
-  become EPUB, MOBI, TXT and the rest, built from the recognised text rather
+  become EPUB, DjVu or TXT, built from the recognised text rather
   than page pictures. Pages that already have text are left alone.
 - **Stays on this Mac.** Nothing is uploaded anywhere.
 
 ## Engines
 
-Settings → Engines shows which tools are installed and copies the install
-command for any that are missing. When several engines can do a job, the one
-higher in this table wins.
+Reads PDF, EPUB, MOBI, DjVu, FB2, CBZ, XPS, HTML, TXT, DOCX and RTF; writes
+PDF, EPUB, DjVu and TXT. AZW3 is not supported. Settings → Engines lists the
+tools; all of them come inside the app. When several engines can do a job,
+the one higher in this table wins.
 
-| Engine | Install | Conversions |
+| Engine | Licence | Conversions |
 |---|---|---|
-| Calibre (`ebook-convert`) | `brew install --cask calibre` | EPUB, MOBI, AZW3, FB2, DOCX, RTF, TXT, HTML, PDF to each other |
-| DjVuLibre (`ddjvu`, `cjb2`, `c44`, `djvm`, `djvused`, `djvutxt`) | `brew install djvulibre` | DjVu → PDF/TXT; PDF → DjVu |
-| MuPDF (`mutool`) | `brew install mupdf-tools` | EPUB, MOBI, FB2, CBZ, XPS, HTML, TXT → PDF; → TXT |
-| built in (PDFKit) | — | PDF → EPUB, PDF → TXT |
+| DjVuLibre (`ddjvu`, `cjb2`, `c44`, `djvm`, `djvused`, `djvutxt`) | GPL 2 | DjVu → PDF/TXT; PDF → DjVu; DjVu title and author |
+| MuPDF (`mutool`) | AGPL 3 | EPUB, MOBI, FB2, CBZ, XPS, HTML, TXT → PDF; → TXT |
+| built in (PDFKit, TextKit) | — | PDF → EPUB, PDF → TXT; DOCX, RTF → PDF; EPUB and PDF title, author, cover |
 | Apple Vision | — | OCR in English, French, German, Italian, Spanish, Portuguese |
-| Tesseract (`tesseract`) | `brew install tesseract tesseract-lang` | OCR in Greek, monotonic and polytonic |
+| Tesseract (`tesseract`) | Apache 2 | OCR in Greek, monotonic and polytonic |
+
+Because MuPDF is AGPL and DjVuLibre GPL, a copy of biblioteca given to anyone
+else must come with an offer of those tools' source code.
 
 ## Settings
 
@@ -74,7 +78,7 @@ higher in this table wins.
 
 - PDF → EPUB needs a text layer. With *OCR scans* off, a scanned PDF fails
   with a message saying so instead of producing an empty book.
-- DjVu → PDF, and therefore DjVu → EPUB or MOBI, gives page images unless
+- DjVu → PDF, and therefore DjVu → EPUB, gives page images unless
   *OCR scans* is on: `ddjvu` does not carry a DjVu's text into the PDF, so
   with OCR the pages are recognised again.
 - OCR rebuilds paragraphs, not layout: tables, columns and footnotes come out
@@ -92,9 +96,17 @@ higher in this table wins.
 
 ## Building
 
-Needs Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen)
-(`brew install xcodegen`). The Xcode project is generated from `project.yml`
-and is not checked in.
+Needs Xcode, [XcodeGen](https://github.com/yonaskolb/XcodeGen) and, on the
+build Mac only, the tools that get bundled:
+
+```bash
+brew install xcodegen mupdf-tools djvulibre tesseract tesseract-lang
+```
+
+The Xcode project is generated from `project.yml` and is not checked in. A
+build phase (`Scripts/bundle-tools.py`) copies the tools, the libraries they
+load and the OCR models into the app, rewrites their load paths and signs
+them; the Debug app came to 60 MB.
 
 ```bash
 xcodegen generate

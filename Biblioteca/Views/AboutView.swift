@@ -106,10 +106,10 @@ struct AboutView: View {
 
     private static let about = """
         Drop books on the window and choose what they should become. biblioteca \
-        reads and writes PDF, EPUB, MOBI, AZW3, DjVu, FB2 and more, and picks the \
-        best converter installed on this Mac for each book — Calibre, DjVuLibre, \
-        MuPDF, or its own PDF reader — going through PDF when no single tool can \
-        do the whole journey.
+        reads PDF, EPUB, MOBI, DjVu, FB2, Word and more, writes PDF, EPUB, DjVu \
+        and text, and reads scanned pages with OCR. Everything it needs is inside \
+        the app: MuPDF, DjVuLibre, Tesseract and its own PDF reader, going \
+        through PDF when no single tool can do the whole journey.
 
         Nothing leaves this machine. Originals are never changed or overwritten, \
         and a conversion that fails leaves nothing half-written behind.

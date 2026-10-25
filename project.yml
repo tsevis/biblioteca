@@ -22,7 +22,7 @@ targets:
           - CFBundleTypeName: Book
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
-            CFBundleTypeExtensions: [pdf, epub, mobi, prc, azw, azw3, kf8, djvu, djv, fb2, cbz, xps, oxps, txt, docx, rtf, html, htm]
+            CFBundleTypeExtensions: [pdf, epub, mobi, prc, azw, djvu, djv, fb2, cbz, xps, oxps, txt, docx, rtf, html, htm]
     settings:
       base:
         PRODUCT_NAME: biblioteca
@@ -36,6 +36,12 @@ targets:
         CURRENT_PROJECT_VERSION: "2"
         ENABLE_HARDENED_RUNTIME: NO
         ENABLE_APP_SANDBOX: NO
+        # The bundling phase reads the tools from Homebrew, outside the project.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    postBuildScripts:
+      - name: Bundle MuPDF, DjVuLibre and Tesseract
+        script: python3 "$SRCROOT/Scripts/bundle-tools.py" "$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH"
+        basedOnDependencyAnalysis: false
   BibliotecaTests:
     type: bundle.unit-test
     platform: macOS

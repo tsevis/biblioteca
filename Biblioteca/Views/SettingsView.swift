@@ -67,7 +67,7 @@ private struct EnginesSettings: View {
                 }
             } footer: {
                 HStack {
-                    Text("PDF → EPUB and PDF → TXT also work without any of these.")
+                    Text("All of these come inside biblioteca; nothing needs installing.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -91,7 +91,9 @@ private struct ToolRow: View {
                 Text(tool.purpose).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            if tool.url == nil {
+            if tool.isBundled {
+                Text("Included").font(.caption).foregroundStyle(.secondary)
+            } else if tool.url == nil {
                 Button("Copy Install Command") {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(tool.installCommand, forType: .string)

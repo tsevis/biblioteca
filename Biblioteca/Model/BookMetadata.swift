@@ -18,7 +18,7 @@ struct BookMetadata: Sendable, Equatable {
     static let empty = BookMetadata()
 
     let title: String
-    /// Several authors are separated with "&", as Calibre does.
+    /// Several authors are separated with "&".
     let author: String
     let cover: URL?
 

@@ -28,7 +28,8 @@ final class AppSettings {
 
     /// The recogniser for the chosen language, or nil when it needs Tesseract and Tesseract is missing.
     var ocr: OCRProcessor? {
-        OCRProcessor.make(language: conversion.ocrLanguage, tesseract: tools.url(for: "tesseract"))
+        OCRProcessor.make(language: conversion.ocrLanguage, tesseract: tools.url(for: "tesseract"),
+                          tessdata: tools.tessdataDirectory)
     }
 
     func refreshTools() {

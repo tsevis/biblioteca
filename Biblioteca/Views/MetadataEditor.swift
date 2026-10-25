@@ -75,7 +75,7 @@ struct MetadataEditor: View {
         guard !lost.isEmpty else { return nil }
         let names = lost.map(\.displayName).joined(separator: ", ")
         return "\(queue.targetFormat.displayName) output will not get the \(names). "
-            + "Calibre writes e-book metadata; DjVuLibre writes DjVu titles."
+            + "Only PDF and EPUB hold a cover; DjVu holds title and author."
     }
 
     private func load() async {
