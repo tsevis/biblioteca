@@ -6,7 +6,7 @@ A native macOS app that converts books between **PDF, EPUB, MOBI, DjVu,
 FB2** and more. Everything it needs is inside the app: nothing to install. Drop books on the window, choose what they should become, and
 press Convert.
 
-**Version 0.2.0.** SwiftUI, macOS 15 or later. See [CHANGELOG.md](CHANGELOG.md).
+**Version 0.3.0.** SwiftUI, macOS 15 or later. See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -115,6 +115,19 @@ xcodebuild -project Biblioteca.xcodeproj -scheme Biblioteca -configuration Relea
 
 The app is at `build/DerivedData/Build/Products/Release/biblioteca.app`.
 
+To hand it to another Mac, sign it with the Developer ID, notarize it and
+staple the ticket. `Scripts/sign-and-notarize.sh` signs every binary inside,
+the bundled tools too, with the hardened runtime, then builds a DMG, sends it
+to Apple and staples it. It needs the Developer ID certificate in the
+keychain and a notarytool profile (`crewlistr-notary`):
+
+```bash
+APPLE_TEAM_ID=TN899J6HRF Scripts/sign-and-notarize.sh build/DerivedData/Build/Products/Release/biblioteca.app
+```
+
+The signed app and `biblioteca-<version>.dmg` land in
+`build/DerivedData/Build/Products/Release/signed/`.
+
 Tests are hostless: the core sources are compiled into the test bundle, so a
 test run never launches the app or opens a window.
 
@@ -140,7 +153,7 @@ python3 Scripts/make-icon.py
 | `Biblioteca/Views` | Window, splash screen, settings, the TVD mark |
 | `Biblioteca/Resources` | Icon, splash art, logo, Info.plist |
 | `BibliotecaTests` | Swift Testing suites |
-| `Scripts` | Icon and artwork generator |
+| `Scripts` | Icon and artwork generator, tool bundling, signing and notarizing |
 
 ---
 

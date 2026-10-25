@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-25
 
 - biblioteca stands alone: MuPDF, DjVuLibre and Tesseract with its English,
   Greek and polytonic Greek models are built into the app, which no longer
