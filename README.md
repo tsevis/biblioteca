@@ -8,6 +8,11 @@ press Convert.
 
 **Version 0.3.0.** SwiftUI, macOS 15 or later. See [CHANGELOG.md](CHANGELOG.md).
 
+<p align="center">
+  <img src="documents/screenshot-batch.png" width="49%" alt="The Batch tab: four PDF papers queued for EPUB with OCR, each showing its route, with Desktop as the output folder.">
+  <img src="documents/screenshot-welcome.png" width="49%" alt="The welcome screen: the biblioteca name over a photo of a bookshelf, with version 0.3.0 and a short description.">
+</p>
+
 ---
 
 ## What it does
