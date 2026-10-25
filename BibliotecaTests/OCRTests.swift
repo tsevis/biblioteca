@@ -144,3 +144,42 @@ struct GreekRepairTests {
         #expect(GreekText.repair(input) == expected)
     }
 }
+
+@Suite("Scanned page layout")
+struct ScannedPageLayoutTests {
+    /// Lines as wide as the 1899 test scan's (237 pt), the last one short.
+    private func page(left: CGFloat, head: String?) -> [TextLine] {
+        let body = [("Ἡ θάλασσα ἦταν ἥσυχη κι ὁ", 237), ("γέρος κάθονταν στὴν πλώρη", 237),
+                    ("σιωπηλός.", 60)].enumerated().map { index, line in
+            TextLine(text: line.0, frame: CGRect(x: left, y: 417 - CGFloat(index) * 14,
+                                                 width: CGFloat(line.1), height: 9))
+        }
+        let heading = head.map { [TextLine(text: $0, frame: CGRect(x: left + 100, y: 449, width: 130, height: 5))] }
+        return (heading ?? []) + body
+    }
+
+    @Test("Left and right pages are measured on their own margins")
+    func marginsPerPage() {
+        // The scan's left pages start 42 pt further right than its right pages.
+        let text = PDFTextExtractor.text(ofPages: [page(left: 26, head: nil), page(left: 68, head: nil)])
+        #expect(PDFTextExtractor.paragraphs(in: text).count == 2)
+    }
+
+    @Test("Running heads that repeat with page numbers are left out, OCR slips and all")
+    func runningHeads() {
+        // As read from the 1899 scan: the book's title on left pages, the story's on right ones.
+        let heads = ["Θάλασσα 19", "20 Λόγια τῆς πλώρης", "Θάλασσα 21", "22 “όγια τῆς πλώρης", "Θαλασσα 23"]
+        let text = PDFTextExtractor.text(ofPages: heads.enumerated().map { page(left: $0 % 2 == 0 ? 26 : 68, head: $1) })
+        #expect(heads.allSatisfy { !text.contains($0) })
+        #expect(PDFTextExtractor.paragraphs(in: text).count == heads.count)
+    }
+
+    @Test("A chapter heading with a number is kept")
+    func chapterHeadingKept() {
+        // Chapters at least three pages long; two pages apart, headings look like running heads.
+        let pages = [page(left: 26, head: "Κεφάλαιο 1"), page(left: 68, head: nil), page(left: 26, head: nil),
+                     page(left: 68, head: "Κεφάλαιο 2")]
+        let text = PDFTextExtractor.text(ofPages: pages)
+        #expect(text.contains("Κεφάλαιο 1") && text.contains("Κεφάλαιο 2"))
+    }
+}

@@ -26,9 +26,9 @@ enum PDFTextExtractor {
             let end = index + 1 < ranges.count ? ranges[index + 1].first : document.pageCount
             // Lines from consecutive pages are laid end to end, so a paragraph
             // that runs over a page break stays whole.
-            let text = Self.text(of: (start.first..<max(end, start.first + 1))
+            let text = Self.text(ofPages: (start.first..<max(end, start.first + 1))
                 .compactMap { document.page(at: $0) }
-                .flatMap(lines(of:)))
+                .map(lines(of:)))
             let paragraphs = paragraphs(in: text)
             return paragraphs.isEmpty ? nil : EPUBChapter(title: start.title, paragraphs: paragraphs)
         }
@@ -52,27 +52,79 @@ enum PDFTextExtractor {
     private static let shortLineShare: CGFloat = 0.15
     /// A gap this many times the usual line spacing starts a new paragraph.
     private static let paragraphGapFactor: CGFloat = 1.5
+    /// Running heads alternate between left and right pages, so a page's twin is two pages away.
+    private static let runningHeadReach = 2
+
+    /// A line and whether a paragraph ends after it.
+    private struct MarkedLine {
+        let text: String
+        let endsParagraph: Bool
+    }
 
     /// Rebuilds the paragraph breaks ("\n\n") that PDFKit's plain text loses,
-    /// from where each line sits on the page.
+    /// from where each line sits on its page. Each page is measured on its own,
+    /// since the left and right pages of a scanned book sit at different offsets.
+    static func text(ofPages pages: [[TextLine]]) -> String {
+        let heads = runningHeads(in: pages)
+        let marked = pages.enumerated().flatMap { index, page in
+            markParagraphEnds(on: heads.contains(index) ? Array(page.dropFirst()) : page)
+        }
+        guard let first = marked.first else { return "" }
+        return zip(marked, marked.dropFirst()).reduce(first.text) { text, pair in
+            text + (pair.0.endsParagraph ? "\n\n" : "\n") + pair.1.text
+        }
+    }
+
     static func text(of lines: [TextLine]) -> String {
-        guard let first = lines.first else { return "" }
-        let left = lines.map(\.frame.minX).min() ?? 0
-        let right = lines.map(\.frame.maxX).max() ?? 0
-        let shortLineEdge = right - (right - left) * shortLineShare
-        let gaps = zip(lines, lines.dropFirst())
+        text(ofPages: [lines])
+    }
+
+    private static func usualGap(on page: [TextLine]) -> CGFloat {
+        let gaps = zip(page, page.dropFirst())
             .map { $0.frame.minY - $1.frame.minY }
             .filter { $0 > 0 }
             .sorted()
-        let usualGap = gaps.isEmpty ? 0 : gaps[gaps.count / 2]
+        return gaps.isEmpty ? 0 : gaps[gaps.count / 2]
+    }
 
-        return zip(lines, lines.dropFirst()).reduce(first.text) { text, pair in
-            let (previous, line) = pair
-            let gap = previous.frame.minY - line.frame.minY
-            let endsParagraph = previous.frame.maxX < shortLineEdge
-                || (usualGap > 0 && gap > usualGap * paragraphGapFactor)
-            return text + (endsParagraph ? "\n\n" : "\n") + line.text
+    private static func isParagraphGap(_ gap: CGFloat, usualGap: CGFloat) -> Bool {
+        usualGap > 0 && gap > usualGap * paragraphGapFactor
+    }
+
+    private static func markParagraphEnds(on lines: [TextLine]) -> [MarkedLine] {
+        let usual = usualGap(on: lines)
+        let left = lines.map(\.frame.minX).min() ?? 0
+        let right = lines.map(\.frame.maxX).max() ?? 0
+        let shortLineEdge = right - (right - left) * shortLineShare
+
+        return lines.enumerated().map { index, line in
+            let gap = index + 1 < lines.count ? line.frame.minY - lines[index + 1].frame.minY : 0
+            return MarkedLine(text: line.text, endsParagraph: line.frame.maxX < shortLineEdge
+                                  || isParagraphGap(gap, usualGap: usual))
         }
+    }
+
+    /// Pages whose first line is a running head, such as "Θάλασσα 19": a page
+    /// number at one end, a gap below, and the same words heading a page up to
+    /// `runningHeadReach` pages away. A chapter heading like "Κεφάλαιο 1" does not repeat.
+    private static func runningHeads(in pages: [[TextLine]]) -> Set<Int> {
+        let candidates = pages.map(headCandidate(of:))
+        return Set(candidates.indices.filter { index in
+            guard let words = candidates[index] else { return false }
+            let nearby = max(0, index - runningHeadReach)...min(candidates.count - 1, index + runningHeadReach)
+            return nearby.contains { other in
+                other != index && candidates[other].map { RunningHead.isSimilar($0, words) } == true
+            }
+        })
+    }
+
+    /// The first line's words without its page number, when it could be a running head.
+    private static func headCandidate(of page: [TextLine]) -> String? {
+        guard page.count > 1,
+              page[0].text.range(of: #"^\d+\s|\s\d+$"#, options: .regularExpression) != nil,
+              isParagraphGap(page[0].frame.minY - page[1].frame.minY, usualGap: usualGap(on: page))
+        else { return nil }
+        return RunningHead.letters(of: page[0].text)
     }
 
     /// The lines of a page in reading order, without bare page numbers.
