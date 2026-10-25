@@ -87,8 +87,8 @@ test run never launches the app or opens a window.
 xcodebuild test -project Biblioteca.xcodeproj -scheme Biblioteca -destination 'platform=macOS' -derivedDataPath build/DerivedData
 ```
 
-The icon and the splash-screen art are drawn by `Scripts/make-icon.py`
-(Python 3 with Pillow):
+The icon is drawn, and the splash-screen banner cropped from
+`documents/bookshelf.jpg`, by `Scripts/make-icon.py` (Python 3 with Pillow):
 
 ```bash
 python3 Scripts/make-icon.py

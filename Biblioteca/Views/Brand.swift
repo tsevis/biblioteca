@@ -10,7 +10,7 @@ enum Brand {
     /// Loaded by URL so a missing file shows up as an empty image here, not as a
     /// silently blank asset lookup somewhere in a view.
     static let logo = resource("TVDLogo", "pdf")
-    static let splashArt = resource("SplashArt", "png")
+    static let splashArt = resource("SplashArt", "jpg")
 
     static var version: String {
         let info = Bundle.main.infoDictionary ?? [:]

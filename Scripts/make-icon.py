@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
-"""Draws biblioteca's application icon and the splash-screen key art.
+"""Draws biblioteca's application icon and crops the splash-screen key art.
 
-A shelf of book spines on deep ink blue, the last volume leaning on the rest:
-a library, which is what the name says. The same spines, drawn long, make the
-banner across the top of the splash screen.
+The icon is a shelf of book spines on deep ink blue, the last volume leaning
+on the rest: a library, which is what the name says. The banner across the top
+of the splash screen is a band of a real bookshelf, documents/bookshelf.jpg.
 
     python3 Scripts/make-icon.py
 
 Writes:
     Biblioteca/Resources/Assets.xcassets/AppIcon.appiconset
-    Biblioteca/Resources/SplashArt.png
+    Biblioteca/Resources/SplashArt.jpg
     documents/icon.png
 """
 
 from __future__ import annotations
 
 import json
-import random
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
 ICONSET = ROOT / "Biblioteca/Resources/Assets.xcassets/AppIcon.appiconset"
-SPLASH = ROOT / "Biblioteca/Resources/SplashArt.png"
+SPLASH = ROOT / "Biblioteca/Resources/SplashArt.jpg"
+PHOTO = ROOT / "documents/bookshelf.jpg"
 PREVIEW = ROOT / "documents/icon.png"
 
 # PIL does not anti-alias polygons, so everything is drawn large and reduced.
@@ -129,21 +129,16 @@ def icon(size: int = CANVAS) -> Image.Image:
     return canvas.resize((size, size), Image.LANCZOS)
 
 
-def splash(width: int = 1280, height: int = 500, seed: int = 7) -> Image.Image:
-    s = SUPERSAMPLE
-    art = gradient((width * s, height * s)).convert("RGBA")
-    draw = ImageDraw.Draw(art)
-    rng = random.Random(seed)
-    shelf_top = height * s * 0.86
-    draw_shelf(draw, 0, width * s, shelf_top, height * s * 0.06)
+def splash(width: int = 1280, height: int = 440, centre: float = 0.55) -> Image.Image:
+    """A band across the bookshelf photograph, at the splash banner's proportions.
 
-    x = -20.0 * s
-    while x < width * s:
-        w = rng.uniform(26, 58) * s
-        h = rng.uniform(0.48, 0.74) * height * s
-        lean = 12 if rng.random() < 0.08 else 0
-        x = place_spine(art, x, shelf_top, w, h, rng.choice(SPINES), lean=lean) + rng.uniform(2, 6) * s
-    return art.convert("RGB").resize((width, height), Image.LANCZOS)
+    `centre` is where the band sits, as a share of the photo's height: low
+    enough to keep the titles on the spines, high enough to keep their tops.
+    """
+    photo = Image.open(PHOTO).convert("RGB")
+    band = round(photo.width * height / width)
+    top = min(max(0, round(photo.height * centre - band / 2)), photo.height - band)
+    return photo.crop((0, top, photo.width, top + band)).resize((width, height), Image.LANCZOS)
 
 
 def write_iconset() -> None:
@@ -165,5 +160,5 @@ def write_iconset() -> None:
 
 if __name__ == "__main__":
     write_iconset()
-    splash().save(SPLASH)
+    splash().save(SPLASH, quality=88, optimize=True)
     print(f"wrote {ICONSET.relative_to(ROOT)}, {SPLASH.relative_to(ROOT)}, {PREVIEW.relative_to(ROOT)}")

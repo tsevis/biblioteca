@@ -44,8 +44,11 @@ struct AboutView: View {
                 .scaledToFill()
                 .frame(height: Self.artHeight)
                 .clipped()
-            LinearGradient(colors: [.black.opacity(0), .black.opacity(0.55)],
-                           startPoint: .center, endPoint: .bottom)
+            // The photograph is light and busy behind the type, so the scrim
+            // starts a third of the way down and ends dark.
+            LinearGradient(stops: [.init(color: .black.opacity(0), location: 0.3),
+                                   .init(color: .black.opacity(0.75), location: 1)],
+                           startPoint: .top, endPoint: .bottom)
 
             HStack(alignment: .lastTextBaseline, spacing: 12) {
                 Image(nsImage: Brand.logo)

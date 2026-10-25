@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The splash screen's banner is a photograph of a real bookshelf
+  (`documents/bookshelf.jpg`), with a deeper scrim so the type stays legible.
 - Folders can be dropped or chosen; every book inside them and their
   subfolders is added. Hidden files and unknown formats are ignored.
 - New Batch tab: converts books and whole folders into one output folder,
