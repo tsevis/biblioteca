@@ -6,7 +6,7 @@ A native macOS app that converts books between **PDF, EPUB, MOBI, AZW3, DjVu,
 FB2** and more. Drop books on the window, choose what they should become, and
 press Convert.
 
-**Version 0.1.0.** SwiftUI, macOS 15 or later. See [CHANGELOG.md](CHANGELOG.md).
+**Version 0.2.0.** SwiftUI, macOS 15 or later. See [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -80,6 +80,10 @@ higher in this table wins.
 - OCR rebuilds paragraphs, not layout: tables, columns and footnotes come out
   as running text. Tesseract's Greek model sometimes puts polytonic accents
   into monotonic text ("φῶς" for "φως").
+- A page's first line is dropped as a running head when it carries a page
+  number and nearly the same words head a page up to two pages away. A
+  numbered chapter heading on a chapter shorter than three pages is dropped
+  with it.
 - The first Apple Vision recognition can be slow: a one-page book took 109 s
   the first time on the development Mac, and under 3 s afterwards.
 - Without a UTF-8 locale, as in any app launched from Finder, DjVuLibre's

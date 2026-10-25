@@ -1,7 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — 2026-10-25
 
+- A progress bar for the whole run sits beside "N of M" while converting,
+  and each book's bar shows its percentage.
+- OCR text from a real scanned book (Karkavitsas, 1899) keeps its
+  paragraphs: each page is measured on its own margins, since left and right
+  pages of a scan sit at different offsets, and running heads such as
+  "Θάλασσα 19" are left out. Against Project Gutenberg's transcription of
+  ten pages, the polytonic setting matched 96.1% of the letters, accents
+  aside.
 - Batch: a search field above the list narrows a long library by book name
   and folder, ignoring case and accents. While a search is active, Convert
   takes only the books it shows.
