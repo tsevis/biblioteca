@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 — 2026-10-25
+
+- Fixed a crash when a PDF became EPUB, TXT or DjVu: on some pages PDFKit
+  hands out a line whose text has a negative length (page 18 of arXiv
+  2608.03575v1), and reading it killed the app. Each line's text is now cut
+  from the page's text, and a broken range is skipped.
+
 ## 0.3.0 — 2026-10-25
 
 - biblioteca stands alone: MuPDF, DjVuLibre and Tesseract with its English,

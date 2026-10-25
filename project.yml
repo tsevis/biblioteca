@@ -32,8 +32,8 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: biblioteca
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
         INFOPLIST_KEY_NSHumanReadableCopyright: "© 2026 Charis Tsevis"
-        MARKETING_VERSION: "0.3.0"
-        CURRENT_PROJECT_VERSION: "3"
+        MARKETING_VERSION: "0.3.1"
+        CURRENT_PROJECT_VERSION: "4"
         ENABLE_HARDENED_RUNTIME: NO
         ENABLE_APP_SANDBOX: NO
         # The bundling phase reads the tools from Homebrew, outside the project.

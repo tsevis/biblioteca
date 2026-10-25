@@ -129,13 +129,31 @@ enum PDFTextExtractor {
 
     /// The lines of a page in reading order, without bare page numbers.
     static func lines(of page: PDFPage) -> [TextLine] {
+        let pageText = (page.string ?? "") as NSString
         let selection = page.selection(for: page.bounds(for: .cropBox))
         return (selection?.selectionsByLine() ?? []).compactMap { line in
-            let text = (line.string ?? "").trimmingCharacters(in: .whitespaces)
+            let text = Self.text(of: line, on: page, in: pageText).trimmingCharacters(in: .whitespacesAndNewlines)
             let isPageNumber = !text.isEmpty && text.allSatisfy(\.isNumber)
             guard !text.isEmpty, !isPageNumber else { return nil }
             return TextLine(text: text, frame: line.bounds(for: page))
         }
+    }
+
+    /// A line's text, cut from the page's text by the line's own ranges.
+    ///
+    /// `PDFSelection.string` is not used: on some pages PDFKit gives a line a
+    /// range of negative length, and building its string then kills the app
+    /// (page 18 of arXiv 2608.03575v1). Ranges outside the page's text are skipped.
+    private static func text(of line: PDFSelection, on page: PDFPage, in pageText: NSString) -> String {
+        let whole = NSRange(location: 0, length: pageText.length)
+        return (0..<line.numberOfTextRanges(on: page)).compactMap { index -> String? in
+            let range = line.range(at: index, on: page)
+            guard range.location != NSNotFound, range.length > 0,
+                  NSIntersectionRange(range, whole) == range
+            else { return nil }
+            return pageText.substring(with: range)
+        }
+        .joined()
     }
 
     private static func outlineStarts(of document: PDFDocument) -> [(title: String, first: Int)] {
