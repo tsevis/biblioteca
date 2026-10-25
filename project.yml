@@ -1,0 +1,54 @@
+name: Biblioteca
+options:
+  bundleIdPrefix: com.tsevis
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+targets:
+  Biblioteca:
+    type: application
+    platform: macOS
+    sources: [Biblioteca]
+    info:
+      path: Biblioteca/Resources/Info.plist
+      properties:
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Book
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeExtensions: [pdf, epub, mobi, prc, azw, azw3, kf8, djvu, djv, fb2, cbz, xps, oxps, txt, docx, rtf, html, htm]
+    settings:
+      base:
+        PRODUCT_NAME: biblioteca
+        PRODUCT_BUNDLE_IDENTIFIER: com.tsevis.biblioteca
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: biblioteca
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        ENABLE_HARDENED_RUNTIME: NO
+        ENABLE_APP_SANDBOX: NO
+  BibliotecaTests:
+    type: bundle.unit-test
+    platform: macOS
+    # Hostless: the core sources are compiled into the bundle so a test run
+    # never launches the app or opens a window.
+    sources: [BibliotecaTests, Biblioteca/Model, Biblioteca/Engines]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Biblioteca:
+    build:
+      targets:
+        Biblioteca: all
+        BibliotecaTests: [test]
+    test:
+      targets: [BibliotecaTests]

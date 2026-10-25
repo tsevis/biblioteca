@@ -1,0 +1,5 @@
+.DS_Store
+build/
+DerivedData/
+# Generated from project.yml by `xcodegen generate`
+Biblioteca.xcodeproj/
