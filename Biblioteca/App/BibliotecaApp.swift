@@ -4,18 +4,29 @@ import SwiftUI
 @main
 struct BibliotecaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @State private var queue = ConversionQueue()
+    @State private var settings: AppSettings
+    @State private var quick: ConversionQueue
+    @State private var batch: ConversionQueue
+    @AppStorage("selectedTab") private var tab: MainTab = .convert
     /// The splash screen, shown at every launch and again from About biblioteca.
     @State private var isAboutPresented = true
+
+    init() {
+        let settings = AppSettings()
+        _settings = State(initialValue: settings)
+        _quick = State(initialValue: ConversionQueue(mode: .quick, settings: settings, preferences: Preferences()))
+        _batch = State(initialValue: ConversionQueue(mode: .batch, settings: settings,
+                                                     preferences: Preferences(prefix: "batch.")))
+    }
 
     var body: some Scene {
         Window("biblioteca", id: "main") {
             AboutPresentation(isPresented: isAboutPresented, dismiss: { isAboutPresented = false }) {
-                ContentView()
+                ContentView(quick: quick, batch: batch)
             }
-            .environment(queue)
+            .environment(settings)
             .frame(minWidth: 720, minHeight: 540)
-            .onAppear { appDelegate.queue = queue }
+            .onAppear { appDelegate.queue = quick }
         }
         .commands {
             // Replaces the standard About panel with the splash screen.
@@ -23,14 +34,17 @@ struct BibliotecaApp: App {
                 Button("About biblioteca") { isAboutPresented = true }
             }
             CommandGroup(replacing: .newItem) {
-                Button("Add Books…") { FilePanels.chooseBooks { queue.add($0) } }
+                Button("Add Books or Folders…") {
+                    let queue = tab == .batch ? batch : quick
+                    FilePanels.chooseBooks { queue.add($0) }
+                }
                     .keyboardShortcut("o")
             }
         }
 
         Settings {
             SettingsView()
-                .environment(queue)
+                .environment(settings)
         }
     }
 }

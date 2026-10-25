@@ -3,78 +3,95 @@ import Observation
 import os
 
 /// The list of books to convert, the chosen target, and the running batch.
+///
+/// The Convert tab (`.quick`) saves each result beside its original or into
+/// one chosen folder. The Batch tab (`.batch`) always writes into an output
+/// folder, recreating the folder structure the books came from, and can skip
+/// books that were already converted by an earlier run.
 @MainActor
 @Observable
 final class ConversionQueue {
+    enum Mode: Sendable {
+        case quick, batch
+    }
+
     private static let log = Logger(subsystem: "com.tsevis.biblioteca", category: "queue")
 
+    let mode: Mode
+    let settings: AppSettings
     private(set) var jobs: [ConversionJob] = []
-    private(set) var tools = ToolLocator()
     private(set) var isRunning = false
 
     var targetFormat: BookFormat {
         didSet { preferences.targetFormat = targetFormat }
     }
-    /// nil means "next to each original".
+    /// In the Convert tab, nil means "next to each original". The Batch tab needs one.
     var outputDirectory: URL? {
         didSet { preferences.outputDirectory = outputDirectory }
     }
-    var settings: ConversionSettings {
-        didSet { preferences.settings = settings }
+    /// Batch only: leave a book alone when its converted file is already in place.
+    var skipExisting: Bool {
+        didSet { preferences.skipExisting = skipExisting }
     }
 
     private let preferences: Preferences
     private var batch: Task<Void, Never>?
 
-    init(preferences: Preferences = Preferences()) {
+    init(mode: Mode, settings: AppSettings, preferences: Preferences) {
+        self.mode = mode
+        self.settings = settings
         self.preferences = preferences
         targetFormat = preferences.targetFormat
         outputDirectory = preferences.outputDirectory
-        settings = preferences.settings
-    }
-
-    private var converter: Converter {
-        Converter(engines: Converter.availableEngines(tools: tools, settings: settings))
+        skipExisting = preferences.skipExisting
     }
 
     // MARK: Queue editing
 
+    /// Adds books and every book inside the given folders.
     func add(_ urls: [URL]) {
         let known = Set(jobs.map(\.source.standardizedFileURL))
-        let fresh = urls
-            .map(\.standardizedFileURL)
-            .filter { !known.contains($0) && !$0.hasDirectoryPath }
-        jobs += fresh.map(ConversionJob.init(source:))
+        let fresh = BookScanner.books(in: urls)
+            .filter { !known.contains($0.url.standardizedFileURL) }
+            .map { ConversionJob(source: $0.url, relativeFolder: mode == .batch ? $0.relativeFolder : "") }
+        jobs += fresh
     }
 
     func remove(_ ids: Set<ConversionJob.ID>) {
         jobs = jobs.filter { !ids.contains($0.id) || $0.isActive }
     }
 
+    /// Removes converted and skipped books; failed ones stay so their errors can be read.
     func clearFinished() {
         jobs = jobs.filter {
-            if case .finished = $0.status { return false }
-            return true
+            switch $0.status {
+            case .finished, .skipped: false
+            default: true
+            }
         }
     }
 
-    func refreshTools() {
-        tools = ToolLocator()
+    func clearAll() {
+        guard !isRunning else { return }
+        jobs = []
     }
 
     // MARK: Routing
 
-    /// The engines a job would pass through, e.g. "DjVuLibre → biblioteca", or nil if none can.
+    /// The engines a job would pass through, e.g. "DjVuLibre → Calibre", or nil if none can.
     func routeDescription(for job: ConversionJob) -> String? {
         guard let format = job.format,
-              let steps = converter.route(from: format, to: targetFormat)
+              let steps = settings.converter.route(from: format, to: targetFormat)
         else { return nil }
         return steps.map(\.engine.id.displayName).joined(separator: " → ")
     }
 
     var canStart: Bool {
-        !isRunning && jobs.contains { $0.isPending }
+        guard !isRunning, jobs.contains(where: \.isPending) else { return false }
+        return mode == .quick || outputDirectory != nil
     }
+
+    var doneCount: Int { jobs.filter(\.isDone).count }
 
     // MARK: Running
 
@@ -82,7 +99,7 @@ final class ConversionQueue {
         guard canStart else { return }
         isRunning = true
         let target = targetFormat
-        let converter = converter
+        let converter = settings.converter
         let pending = jobs.filter(\.isPending).map(\.id)
         batch = Task {
             for id in pending {
@@ -98,14 +115,29 @@ final class ConversionQueue {
         batch?.cancel()
     }
 
+    private func directory(for job: ConversionJob) -> URL {
+        let base = outputDirectory ?? job.source.deletingLastPathComponent()
+        return job.relativeFolder.isEmpty
+            ? base
+            : base.appendingPathComponent(job.relativeFolder, isDirectory: true)
+    }
+
     private func run(_ id: ConversionJob.ID, to target: BookFormat, with converter: Converter) async {
         guard let job = jobs.first(where: { $0.id == id }) else { return }
         guard job.format != target else {
-            update(id, .failed("Already a \(target.displayName) file."))
+            update(id, .skipped("Already \(target.displayName)"))
             return
         }
+        let directory = directory(for: job)
+        let expected = directory
+            .appendingPathComponent(job.source.deletingPathExtension().lastPathComponent)
+            .appendingPathExtension(target.fileExtension)
+        if mode == .batch, skipExisting, FileManager.default.fileExists(atPath: expected.path) {
+            update(id, .skipped("Already converted"))
+            return
+        }
+
         update(id, .converting(progress: nil))
-        let directory = outputDirectory ?? job.source.deletingLastPathComponent()
         do {
             let result = try await converter.convert(job.source, to: target, in: directory) { [weak self] fraction in
                 Task { @MainActor in self?.reportProgress(id, fraction) }

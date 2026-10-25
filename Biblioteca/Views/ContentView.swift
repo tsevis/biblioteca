@@ -1,6 +1,43 @@
 import SwiftUI
 
+/// The two ways of working, chosen in the toolbar.
+enum MainTab: String, CaseIterable, Identifiable {
+    case convert, batch
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .convert: "Convert"
+        case .batch: "Batch"
+        }
+    }
+}
+
 struct ContentView: View {
+    let quick: ConversionQueue
+    let batch: ConversionQueue
+    @AppStorage("selectedTab") private var tab: MainTab = .convert
+
+    var body: some View {
+        QueueView()
+            .environment(tab == .convert ? quick : batch)
+            .id(tab)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Picker("Mode", selection: $tab) {
+                        ForEach(MainTab.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .help("Convert: quick conversions. Batch: whole folders into one output folder.")
+                }
+            }
+    }
+}
+
+/// One tab: its list of books (or the drop area when empty) and its bottom bar.
+private struct QueueView: View {
     @Environment(ConversionQueue.self) private var queue
     @State private var selection = Set<ConversionJob.ID>()
     @State private var isTargeted = false
@@ -8,7 +45,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             if queue.jobs.isEmpty {
-                EmptyQueueView(isTargeted: isTargeted) {
+                EmptyQueueView(mode: queue.mode, isTargeted: isTargeted) {
                     FilePanels.chooseBooks { queue.add($0) }
                 }
             } else {
@@ -29,21 +66,22 @@ struct ContentView: View {
                 Button {
                     FilePanels.chooseBooks { queue.add($0) }
                 } label: {
-                    Label("Add Books", systemImage: "plus")
+                    Label("Add Books or Folders", systemImage: "plus")
                 }
                 Button {
                     queue.clearFinished()
                 } label: {
                     Label("Clear Finished", systemImage: "checkmark.circle.badge.xmark")
                 }
-                .disabled(!queue.jobs.contains { if case .finished = $0.status { true } else { false } })
+                .disabled(queue.doneCount == 0)
             }
         }
     }
 }
 
-/// The empty window: a drop target that is also one big button for choosing books.
+/// The empty tab: a drop target that is also one big button for choosing books.
 private struct EmptyQueueView: View {
+    let mode: ConversionQueue.Mode
     let isTargeted: Bool
     let chooseBooks: () -> Void
     @State private var isHovering = false
@@ -53,19 +91,21 @@ private struct EmptyQueueView: View {
     var body: some View {
         Button(action: chooseBooks) {
             VStack(spacing: 14) {
-                Image(systemName: "books.vertical")
+                Image(systemName: mode == .batch ? "folder" : "books.vertical")
                     .font(.system(size: 56, weight: .light))
                     .foregroundStyle(isHighlighted ? Color.accentColor : .secondary)
-                Text("Drop books here")
+                Text("Drop books or folders here")
                     .font(.title2.weight(.medium))
-                Text("or click to choose books")
+                Text("or click to choose them")
                     .font(.callout)
                     .foregroundStyle(isHighlighted ? Color.accentColor : .secondary)
-                Text("PDF, EPUB, MOBI, AZW3, DjVu, FB2, CBZ, XPS, DOCX, TXT")
+                Text(detail)
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
                     .padding(.top, 6)
             }
+            .padding(.horizontal, 40)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
                 RoundedRectangle(cornerRadius: 14)
@@ -80,7 +120,17 @@ private struct EmptyQueueView: View {
         .buttonStyle(.plain)
         .pointerStyle(.link)
         .onHover { isHovering = $0 }
-        .accessibilityLabel("Add Books")
-        .accessibilityHint("Opens a panel for choosing books, or drop books here")
+        .accessibilityLabel("Add Books or Folders")
+        .accessibilityHint("Opens a panel for choosing books or folders, or drop them here")
+    }
+
+    private var detail: String {
+        switch mode {
+        case .quick:
+            "PDF, EPUB, MOBI, AZW3, DjVu, FB2, CBZ, XPS, DOCX, TXT — folders are searched for books."
+        case .batch:
+            "Every book in the folders and their subfolders is converted into one output folder, "
+                + "keeping the same folder structure."
+        }
     }
 }

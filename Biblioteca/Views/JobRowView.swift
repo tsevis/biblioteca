@@ -37,11 +37,16 @@ struct JobRowView: View {
     private var subtitle: String {
         guard let format = job.format else { return "Unknown format" }
         let target = queue.targetFormat
-        if format == target { return "Already \(target.displayName)" }
+        if format == target { return place + "Already \(target.displayName)" }
         guard let route else {
-            return "\(format.displayName) → \(target.displayName): install a converter in Settings"
+            return place + "\(format.displayName) → \(target.displayName): install a converter in Settings"
         }
-        return "\(format.displayName) → \(target.displayName) · \(route)"
+        return place + "\(format.displayName) → \(target.displayName) · \(route)"
+    }
+
+    /// In a batch, the folder the book came from and is written back into.
+    private var place: String {
+        job.relativeFolder.isEmpty ? "" : "\(job.relativeFolder) · "
     }
 
     private func reveal(_ url: URL) {
@@ -77,6 +82,10 @@ private struct StatusView: View {
                 .help(message)
         case .cancelled:
             Text("Stopped").foregroundStyle(.secondary)
+        case let .skipped(reason):
+            Label("Skipped", systemImage: "arrow.uturn.forward.circle")
+                .foregroundStyle(.secondary)
+                .help(reason)
         }
     }
 }

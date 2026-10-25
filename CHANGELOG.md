@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Folders can be dropped or chosen; every book inside them and their
+  subfolders is added. Hidden files and unknown formats are ignored.
+- New Batch tab: converts books and whole folders into one output folder,
+  recreating the folder structure, and skips books already converted.
 - The whole empty drop area is a button that opens the book picker; it
   highlights on hover.
 - VoiceOver names the splash screen's links and Continue button again,

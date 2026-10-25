@@ -6,12 +6,13 @@ import UniformTypeIdentifiers
 enum FilePanels {
     static func chooseBooks(_ completion: @escaping ([URL]) -> Void) {
         let panel = NSOpenPanel()
-        panel.title = "Add Books"
+        panel.title = "Add Books or Folders"
+        panel.prompt = "Add"
         panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
+        panel.canChooseDirectories = true
         panel.allowedContentTypes = BookFormat.allCases
             .flatMap { UTType(filenameExtension: $0.fileExtension).map { [$0] } ?? [] }
-            + [.pdf, .epub, .plainText, .html, .rtf]
+            + [.pdf, .epub, .plainText, .html, .rtf, .folder]
         if panel.runModal() == .OK {
             completion(panel.urls)
         }

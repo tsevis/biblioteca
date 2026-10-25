@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Target format, output folder and the Convert / Stop button.
+/// Target format, output folder and the Convert / Stop button of one tab.
 struct ConversionBar: View {
     @Environment(ConversionQueue.self) private var queue
 
@@ -17,20 +17,23 @@ struct ConversionBar: View {
             .fixedSize()
             .disabled(queue.isRunning)
 
-            Menu {
-                Button("Next to Each Original") { queue.outputDirectory = nil }
-                Button("Choose Folder…") { FilePanels.chooseFolder { queue.outputDirectory = $0 } }
-            } label: {
-                Label(queue.outputDirectory?.lastPathComponent ?? "Next to originals",
-                      systemImage: "folder")
+            outputMenu
+                .fixedSize()
+                .help(queue.outputDirectory?.path ?? outputPlaceholder)
+                .disabled(queue.isRunning)
+
+            if queue.mode == .batch {
+                Toggle("Skip converted", isOn: $queue.skipExisting)
+                    .help("Leave a book alone when its converted file is already in the output folder")
+                    .disabled(queue.isRunning)
             }
-            .fixedSize()
-            .help(queue.outputDirectory?.path ?? "Converted books are saved beside the originals")
-            .disabled(queue.isRunning)
 
             Spacer()
 
             if queue.isRunning {
+                Text("\(queue.doneCount) of \(queue.jobs.count)")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
                 Button("Stop", role: .cancel) { queue.cancel() }
                     .keyboardShortcut(.escape, modifiers: [])
             } else {
@@ -42,5 +45,22 @@ struct ConversionBar: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+
+    private var outputPlaceholder: String {
+        queue.mode == .batch ? "Choose output folder" : "Next to originals"
+    }
+
+    private var outputMenu: some View {
+        Menu {
+            if queue.mode == .quick {
+                Button("Next to Each Original") { queue.outputDirectory = nil }
+            }
+            Button("Choose Folder…") { FilePanels.chooseFolder { queue.outputDirectory = $0 } }
+        } label: {
+            Label(queue.outputDirectory?.lastPathComponent ?? outputPlaceholder,
+                  systemImage: queue.outputDirectory == nil && queue.mode == .batch
+                      ? "folder.badge.questionmark" : "folder")
+        }
     }
 }

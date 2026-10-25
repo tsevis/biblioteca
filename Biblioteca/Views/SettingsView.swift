@@ -14,18 +14,18 @@ struct SettingsView: View {
 }
 
 private struct GeneralSettings: View {
-    @Environment(ConversionQueue.self) private var queue
+    @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        @Bindable var queue = queue
+        @Bindable var settings = settings
         Form {
-            Picker("Page size for EPUB, MOBI… → PDF", selection: $queue.settings.paper) {
+            Picker("Page size for EPUB, MOBI… → PDF", selection: $settings.conversion.paper) {
                 ForEach(PaperSize.allCases) { Text($0.displayName).tag($0) }
             }
-            Picker("DjVu pages", selection: $queue.settings.djvuEncoding) {
+            Picker("DjVu pages", selection: $settings.conversion.djvuEncoding) {
                 ForEach(DjVuEncoding.allCases) { Text($0.displayName).tag($0) }
             }
-            Picker("DjVu resolution", selection: $queue.settings.djvuDPI) {
+            Picker("DjVu resolution", selection: $settings.conversion.djvuDPI) {
                 ForEach(ConversionSettings.djvuDPIChoices, id: \.self) { Text("\($0) dpi").tag($0) }
             }
             Text("Black & white suits text and keeps files small; color keeps pictures. Higher resolution gives sharper pages and larger files.")
@@ -33,17 +33,16 @@ private struct GeneralSettings: View {
                 .foregroundStyle(.secondary)
         }
         .formStyle(.grouped)
-        .disabled(queue.isRunning)
     }
 }
 
 private struct EnginesSettings: View {
-    @Environment(ConversionQueue.self) private var queue
+    @Environment(AppSettings.self) private var settings
 
     var body: some View {
         Form {
             Section {
-                ForEach(queue.tools.tools) { tool in
+                ForEach(settings.tools.tools) { tool in
                     ToolRow(tool: tool)
                 }
             } footer: {
@@ -52,7 +51,7 @@ private struct EnginesSettings: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("Check Again") { queue.refreshTools() }
+                    Button("Check Again") { settings.refreshTools() }
                 }
             }
         }

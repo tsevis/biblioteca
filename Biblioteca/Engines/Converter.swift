@@ -62,6 +62,7 @@ struct Converter: Sendable {
             current = next
         }
 
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let destination = Self.availableURL(in: directory, baseName: baseName, fileExtension: target.fileExtension)
         try FileManager.default.moveItem(at: current, to: destination)
         return destination
