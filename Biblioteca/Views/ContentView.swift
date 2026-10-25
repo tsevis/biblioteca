@@ -49,10 +49,19 @@ private struct QueueView: View {
                     FilePanels.chooseBooks { queue.add($0) }
                 }
             } else {
-                List(queue.jobs, selection: $selection) { job in
+                if queue.mode == .batch {
+                    BatchSearchField()
+                    Divider()
+                }
+                List(queue.visibleJobs, selection: $selection) { job in
                     JobRowView(job: job)
                 }
                 .onDeleteCommand { queue.remove(selection) }
+                .overlay {
+                    if queue.visibleJobs.isEmpty {
+                        ContentUnavailableView.search(text: queue.searchText)
+                    }
+                }
             }
             Divider()
             ConversionBar()

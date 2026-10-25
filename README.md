@@ -18,7 +18,9 @@ press Convert.
   books and folders, and every book in them and their subfolders is
   converted into one output folder that keeps the same folder structure.
   Books already converted by an earlier run, and books already in the target
-  format, are skipped. Each book shows its route
+  format, are skipped. A search field above the Batch list narrows it by
+  name and folder, and Convert then takes only the books shown. Each book
+  shows its route
   (e.g. `DjVu → EPUB · DjVuLibre → Calibre`), its progress and its result.
 - **Never touches the originals.** Results go beside each original or into a
   folder you choose. An existing file is never overwritten: the new one becomes

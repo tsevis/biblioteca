@@ -21,6 +21,11 @@ final class ConversionQueue {
     let settings: AppSettings
     private(set) var jobs: [ConversionJob] = []
     private(set) var isRunning = false
+    /// The books the running (or last) Convert took on, so its count ignores the rest.
+    private(set) var runIDs: Set<ConversionJob.ID> = []
+
+    /// Batch only: narrows the list, and Convert then takes only the books it shows.
+    var searchText = ""
 
     var targetFormat: BookFormat {
         didSet { preferences.targetFormat = targetFormat }
@@ -111,12 +116,25 @@ final class ConversionQueue {
         return converter.routeDescription(from: format, to: targetFormat)
     }
 
+    /// The books on screen: all of them, or in the Batch tab those matching the search.
+    var visibleJobs: [ConversionJob] {
+        mode == .batch ? BookSearch.filter(jobs, query: searchText) : jobs
+    }
+
+    var isSearching: Bool { mode == .batch && visibleJobs.count != jobs.count }
+
+    /// How many books the next Convert would take on.
+    var pendingVisibleCount: Int { visibleJobs.filter(\.isPending).count }
+
     var canStart: Bool {
-        guard !isRunning, jobs.contains(where: \.isPending) else { return false }
+        guard !isRunning, pendingVisibleCount > 0 else { return false }
         return mode == .quick || outputDirectory != nil
     }
 
     var doneCount: Int { jobs.filter(\.isDone).count }
+
+    /// Books of the running Convert that are done.
+    var runDoneCount: Int { jobs.filter { runIDs.contains($0.id) && $0.isDone }.count }
 
     // MARK: Running
 
@@ -125,7 +143,8 @@ final class ConversionQueue {
         isRunning = true
         let target = targetFormat
         let converter = converter
-        let pending = jobs.filter(\.isPending).map(\.id)
+        let pending = visibleJobs.filter(\.isPending).map(\.id)
+        runIDs = Set(pending)
         batch = Task {
             for id in pending {
                 if Task.isCancelled { break }
