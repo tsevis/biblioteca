@@ -18,10 +18,18 @@ struct Converter: Sendable {
     let planner: ConversionPlanner
     /// Recognises text on scanned pages before converting; nil leaves scans as they are.
     let ocr: OCRProcessor?
+    let metadataWriter: MetadataWriter
 
-    init(engines: [any ConversionEngine], ocr: OCRProcessor? = nil) {
+    init(engines: [any ConversionEngine], ocr: OCRProcessor? = nil,
+         metadataWriter: MetadataWriter = MetadataWriter()) {
         planner = ConversionPlanner(engines: engines)
         self.ocr = ocr
+        self.metadataWriter = metadataWriter
+    }
+
+    /// The metadata writer, built from the tools found on this Mac.
+    static func metadataWriter(tools: ToolLocator) -> MetadataWriter {
+        MetadataWriter(ebookMeta: tools.url(for: "ebook-meta"), djvused: tools.url(for: "djvused"))
     }
 
     /// Engines in order of preference, built from the tools found on this Mac.
@@ -42,7 +50,7 @@ struct Converter: Sendable {
         planner.plan(from: source, to: target)
     }
 
-    func convert(_ input: URL, to target: BookFormat, in directory: URL,
+    func convert(_ input: URL, to target: BookFormat, in directory: URL, metadata: BookMetadata = .empty,
                  progress: @escaping ProgressHandler) async throws -> URL {
         guard let source = BookFormat(url: input) else {
             throw ConversionError.unreadableDocument(input.lastPathComponent)
@@ -51,7 +59,7 @@ struct Converter: Sendable {
         defer { workspace.remove() }
         let baseName = input.deletingPathExtension().lastPathComponent
 
-        let result: URL
+        var result: URL
         if let ocr, OCRRoute.recognizes(source) {
             result = try await convertRecognizing(input, from: source, to: target, ocr: ocr,
                                                   workspace: workspace.url, baseName: baseName, progress: progress)
@@ -60,6 +68,16 @@ struct Converter: Sendable {
                 throw ConversionError.unsupportedRoute(from: source, to: target)
             }
             result = try await run(steps, from: input, workspace: workspace.url, name: baseName, progress: progress)
+        }
+
+        if !metadata.isEmpty {
+            // Never write into the user's original, even on a route with no steps.
+            if result == input {
+                let copy = try Self.scratchURL(in: workspace.url, name: baseName, fileExtension: target.fileExtension)
+                try FileManager.default.copyItem(at: input, to: copy)
+                result = copy
+            }
+            try await metadataWriter.apply(metadata, to: result, format: target)
         }
 
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)

@@ -24,6 +24,7 @@ struct ToolLocator: Sendable {
 
     private static let catalogue: [(name: String, engine: EngineID, purpose: String, install: String)] = [
         ("ebook-convert", .calibre, "EPUB, MOBI, AZW3, FB2, DOCX ↔ PDF", "brew install --cask calibre"),
+        ("ebook-meta", .calibre, "Title, author and cover of EPUB, MOBI, AZW3, FB2", "brew install --cask calibre"),
         ("mutool", .mupdf, "EPUB, MOBI, FB2, CBZ, XPS → PDF", "brew install mupdf-tools"),
         ("ddjvu", .djvulibre, "DjVu → PDF", "brew install djvulibre"),
         ("cjb2", .djvulibre, "PDF → DjVu, black & white pages", "brew install djvulibre"),

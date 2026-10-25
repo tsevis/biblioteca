@@ -22,7 +22,8 @@ final class AppSettings {
 
     func converter(recognizingScans: Bool) -> Converter {
         Converter(engines: Converter.availableEngines(tools: tools, settings: conversion),
-                  ocr: recognizingScans ? ocr : nil)
+                  ocr: recognizingScans ? ocr : nil,
+                  metadataWriter: Converter.metadataWriter(tools: tools))
     }
 
     /// The recogniser for the chosen language, or nil when it needs Tesseract and Tesseract is missing.

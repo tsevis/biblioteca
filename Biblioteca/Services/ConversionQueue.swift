@@ -81,6 +81,23 @@ final class ConversionQueue {
         }
     }
 
+    /// Sets the title, author and cover a waiting book is converted with.
+    func setMetadata(_ metadata: BookMetadata, for id: ConversionJob.ID) {
+        jobs = jobs.map { $0.id == id && $0.isPending ? $0.with(metadata: metadata) : $0 }
+    }
+
+    /// What the original book already says about its title and author.
+    func originalMetadata(of job: ConversionJob) async -> BookMetadata {
+        guard let format = job.format else { return .empty }
+        return await settings.converter.metadataWriter.read(job.source, format: format)
+    }
+
+    /// Fields the user set that the target format cannot hold, or no tool here can write.
+    func unwritableFields(for job: ConversionJob) -> [BookMetadata.Field] {
+        let supported = settings.converter.metadataWriter.supportedFields(for: targetFormat)
+        return BookMetadata.Field.allCases.filter { job.metadata.fields.contains($0) && !supported.contains($0) }
+    }
+
     func clearAll() {
         guard !isRunning else { return }
         jobs = []
@@ -149,7 +166,8 @@ final class ConversionQueue {
 
         update(id, .converting(progress: nil))
         do {
-            let result = try await converter.convert(job.source, to: target, in: directory) { [weak self] fraction in
+            let result = try await converter.convert(job.source, to: target, in: directory,
+                                                     metadata: job.metadata) { [weak self] fraction in
                 Task { @MainActor in self?.reportProgress(id, fraction) }
             }
             update(id, .finished(result))
