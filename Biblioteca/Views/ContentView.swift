@@ -41,6 +41,7 @@ private struct QueueView: View {
     @Environment(ConversionQueue.self) private var queue
     @State private var selection = Set<ConversionJob.ID>()
     @State private var isTargeted = false
+    @State private var isConfirmingClear = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,7 +84,24 @@ private struct QueueView: View {
                     Label("Clear Finished", systemImage: "checkmark.circle.badge.xmark")
                 }
                 .disabled(queue.doneCount == 0)
+                Button {
+                    isConfirmingClear = true
+                } label: {
+                    Label("Clear All", systemImage: "trash")
+                }
+                .keyboardShortcut(.delete, modifiers: [.command, .shift])
+                .help(queue.isRunning ? "Stop converting to clear the list" : "Remove every book from the list")
+                .disabled(queue.jobs.isEmpty || queue.isRunning)
             }
+        }
+        .confirmationDialog("Remove all \(queue.jobs.count) books from the list?",
+                            isPresented: $isConfirmingClear) {
+            Button("Clear All", role: .destructive) {
+                queue.clearAll()
+                selection = []
+            }
+        } message: {
+            Text("The books themselves and anything already converted stay where they are.")
         }
     }
 }
