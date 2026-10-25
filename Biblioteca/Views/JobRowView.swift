@@ -94,7 +94,14 @@ private struct StatusView: View {
             EmptyView()
         case let .converting(progress):
             if let progress {
-                ProgressView(value: progress).frame(width: 90)
+                HStack(spacing: 6) {
+                    ProgressView(value: progress).frame(width: 90)
+                    Text(progress, format: .percent.precision(.fractionLength(0)))
+                        .font(.caption)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 34, alignment: .trailing)
+                }
             } else {
                 ProgressView().controlSize(.small)
             }

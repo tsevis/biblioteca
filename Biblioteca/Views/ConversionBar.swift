@@ -35,6 +35,9 @@ struct ConversionBar: View {
             Spacer()
 
             if queue.isRunning {
+                ProgressView(value: queue.runProgress)
+                    .frame(width: 160)
+                    .help("\(Int(queue.runProgress * 100))% of this run")
                 Text("\(queue.runDoneCount) of \(queue.runIDs.count)")
                     .monospacedDigit()
                     .foregroundStyle(.secondary)

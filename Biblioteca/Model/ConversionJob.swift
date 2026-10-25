@@ -72,3 +72,17 @@ struct ConversionJob: Identifiable, Sendable, Equatable {
         }
     }
 }
+
+extension ConversionJob {
+    /// How far a run of books has come, 0...1: done books count whole, the
+    /// one converting by its own fraction.
+    static func overallProgress(of jobs: [ConversionJob]) -> Double {
+        guard !jobs.isEmpty else { return 0 }
+        let done = jobs.reduce(0.0) { total, job in
+            if job.isDone { return total + 1 }
+            if case let .converting(progress?) = job.status { return total + progress }
+            return total
+        }
+        return done / Double(jobs.count)
+    }
+}

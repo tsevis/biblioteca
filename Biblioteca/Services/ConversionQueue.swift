@@ -136,6 +136,11 @@ final class ConversionQueue {
     /// Books of the running Convert that are done.
     var runDoneCount: Int { jobs.filter { runIDs.contains($0.id) && $0.isDone }.count }
 
+    /// How far the running Convert has come, 0...1.
+    var runProgress: Double {
+        ConversionJob.overallProgress(of: jobs.filter { runIDs.contains($0.id) })
+    }
+
     // MARK: Running
 
     func start() {
