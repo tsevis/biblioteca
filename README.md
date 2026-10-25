@@ -6,7 +6,7 @@ A native macOS app that converts books between **PDF, EPUB, MOBI, DjVu,
 FB2** and more. Everything it needs is inside the app: nothing to install. Drop books on the window, choose what they should become, and
 press Convert.
 
-**Version 0.3.1.** SwiftUI, macOS 15 or later. See [CHANGELOG.md](CHANGELOG.md).
+**Version 0.3.2.** SwiftUI, macOS 15 or later. See [CHANGELOG.md](CHANGELOG.md).
 
 <p align="center">
   <img src="documents/screenshot-batch.png" width="49%" alt="The Batch tab: four PDF papers queued for EPUB with OCR, each showing its route, with Desktop as the output folder.">

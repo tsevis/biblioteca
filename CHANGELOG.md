@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2 — 2026-10-25
+
+- A Clear All button in the toolbar of both the Convert and Batch tabs
+  (Shift-Command-Delete). It asks first, empties the list without touching
+  any file, and is off while a conversion runs.
+
 ## 0.3.1 — 2026-10-25
 
 - Fixed a crash when a PDF became EPUB, TXT or DjVu: on some pages PDFKit
